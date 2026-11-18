@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate 4K/8K Abstract Art Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for control panel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            height: 6px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #818cf8;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #a5b4fc;
+        }
+
+        /* Glassmorphism panel styling */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Accordion transition */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+        }
+        .accordion-content.active {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in-out;
+        }
+
+        .canvas-container {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body class="h-full w-full overflow-hidden text-slate-200 antialiased select-none font-sans bg-slate-950 flex">
+
+    <!-- CANVAS VIEWPORT -->
+    <main id="viewport" class="relative flex-1 h-full w-full flex items-center justify-center p-4 sm:p-8 bg-slate-950/80 overflow-hidden">
+        
+        <!-- Background Grid Pattern for Viewport -->
+        <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none"></div>
+
+        <!-- Render Target Container -->
+        <div class="relative canvas-container max-w-full max-h-full flex items-center justify-center rounded-xl overflow-hidden border border-white/10 bg-black">
+            <canvas id="artCanvas" class="max-w-full max-h-full object-contain block"></canvas>
+        </div>
+
+        <!-- Floating Quick Action Bar (Top Right) -->
+        <div class="absolute top-4 right-4 flex items-center gap-3 z-30">
+            <button id="btnToggleUI" title="Toggle UI Controls (Hotkey: H)" class="glass-panel hover:bg-white/20 text-white p-3 rounded-xl transition flex items-center gap-2 text-xs font-semibold shadow-xl border border-white/15">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span id="lblToggleUI" class="hidden sm:inline">Hide Panel</span>
+            </button>
+            <button id="btnRandomizeAll" title="Randomize Everything" class="glass-panel hover:bg-indigo-600/50 bg-indigo-600/30 text-indigo-200 p-3 rounded-xl transition flex items-center gap-2 text-xs font-semibold shadow-xl border border-indigo-400/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span class="hidden sm:inline">Randomize All</span>
+            </button>
+            <button id="btnExport" title="Export High-Res PNG" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white px-4 py-3 rounded-xl transition flex items-center gap-2 text-xs font-bold shadow-xl border border-indigo-300/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>Export <span id="btnExportResLabel" class="text-indigo-200 font-normal">4K</span></span>
+            </button>
+        </div>
+
+        <!-- Render Time / Resolution Status -->
+        <div id="statusBadge" class="absolute bottom-4 right-4 glass-panel px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-400 z-20 flex items-center gap-2 border border-white/10">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="statusText">3840x2160 • 0ms</span>
+        </div>
+    </main>
+
+    <!-- CONTROL SIDEBAR -->
+    <aside id="sidebar" class="w-full sm:w-[420px] h-full glass-panel border-r border-white/10 flex flex-col z-40 transition-all duration-300 relative shrink-0">
+        
+        <!-- Sidebar Header -->
+        <div class="p-5 border-b border-white/10 flex items-center justify-between bg-slate-900/40">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base text-white tracking-wide">Abstract Studio</h1>
+                    <p class="text-[11px] text-slate-400">4K / 8K Background Generator</p>
+                </div>
+            </div>
+            
+            <!-- Quick Preset Theme Selector -->
+            <select id="selPresetTheme" class="bg-slate-800/80 text-xs text-indigo-300 border border-indigo-500/30 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="" disabled selected>Preset Themes...</option>
+                <option value="cyberpunk">Neon Cyberpunk</option>
+                <option value="memphis">Memphis 80s</option>
+                <option value="minimalist">Minimalist Lines</option>
+                <option value="gold">Gold Luxury</option>
+                <option value="fluid">Organic Fluid Flow</option>
+                <option value="cosmic">Dark Cosmic</option>
+                <option value="chalk">Chalk Scribbles</option>
+            </select>
+        </div>
+
+        <!-- Accordion Controls Scroll Container -->
+        <div class="flex-1 overflow-y-auto divide-y divide-white/5 p-3 space-y-2">
+
+            <!-- 1. RESOLUTION & SEED -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-2V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        1. Canvas Resolution & Seed
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Preset Resolution</label>
+                            <select id="selResolution" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="3840x2160" selected>4K UHD (3840x2160)</option>
+                                <option value="7680x4320">8K UHD (7680x4320)</option>
+                                <option value="1920x1080">Full HD (1920x1080)</option>
+                                <option value="3440x1440">Ultrawide (3440x1440)</option>
+                                <option value="1080x1920">Mobile (1080x1920)</option>
+                                <option value="custom">Custom Resolution</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-1">
+                            <div class="w-1/2">
+                                <label class="block text-slate-400 mb-1">Width</label>
+                                <input type="number" id="numWidth" value="3840" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none" disabled>
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-slate-400 mb-1">Height</label>
+                                <input type="number" id="numHeight" value="2160" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-white/5 flex items-center gap-2">
+                        <div class="flex-1">
+                            <label class="block text-slate-400 mb-1">Random Seed</label>
+                            <input type="text" id="txtSeed" value="123456" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 font-mono text-center focus:outline-none">
+                        </div>
+                        <button id="btnRandomSeed" class="mt-4 bg-slate-700 hover:bg-slate-600 text-slate-200 p-2 rounded-lg transition" title="Randomize Seed Only">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. BACKGROUND & ATMOSPHERE -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        2. Background & Atmosphere
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Background Mode</label>
+                        <select id="selBgType" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                            <option value="conic">Conic Gradient</option>
+                            <option value="mesh">Mesh / Multi-Point Gradient</option>
+                            <option value="solid">Solid Color</option>
+                        </select>
+                    </div>
+
+                    <!-- Colors -->
+                    <div>
+                        <label class="block text-slate-400 mb-1">Background Colors (Stops 1 to 4)</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <input type="color" id="colBg1" value="#0f172a" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colBg2" value="#1e1b4b" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colBg3" value="#311042" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colBg4" value="#020617" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-slate-400 mb-1">
+                            <span>Gradient Angle / Center Shift</span>
+                            <span id="lblBgAngle">135°</span>
+                        </div>
+                        <input type="range" id="rngBgAngle" min="0" max="360" value="135" class="w-full">
+                    </div>
+
+                    <div class="pt-2 border-t border-white/5 grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Film Grain</span>
+                                <span id="lblGrain">15%</span>
+                            </div>
+                            <input type="range" id="rngGrain" min="0" max="50" value="15" class="w-full">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Vignette</span>
+                                <span id="lblVignette">40%</span>
+                            </div>
+                            <input type="range" id="rngVignette" min="0" max="100" value="40" class="w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. LINE SETTINGS -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        3. Lines & Geometry (Straight, Waves, Grid)
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Line Pattern Type</label>
+                            <select id="selLineType" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="none">None (Disabled)</option>
+                                <option value="straight" selected>Straight Parallel / Angled</option>
+                                <option value="sine">Sine Waves</option>
+                                <option value="concentric">Concentric Circles</option>
+                                <option value="grid">Grid / Mesh Network</option>
+                                <option value="rays">Radial Rays</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Line Count</span>
+                                <span id="lblLineCount">45</span>
+                            </div>
+                            <input type="range" id="rngLineCount" min="0" max="300" value="45" class="w-full">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Thickness (Min-Max)</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <input type="number" id="numLineThickMin" value="2" min="1" max="100" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                                <input type="number" id="numLineThickMax" value="12" min="1" max="100" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Opacity Range</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <input type="number" id="numLineOpacityMin" value="0.1" step="0.1" min="0" max="1" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                                <input type="number" id="numLineOpacityMax" value="0.7" step="0.1" min="0" max="1" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Dash Style</label>
+                            <select id="selLineDash" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="solid">Solid</option>
+                                <option value="dashed">Dashed</option>
+                                <option value="dotted">Dotted</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Line Blend Mode</label>
+                            <select id="selLineBlend" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="source-over">Normal</option>
+                                <option value="screen">Screen</option>
+                                <option value="overlay">Overlay</option>
+                                <option value="color-dodge">Color Dodge</option>
+                                <option value="lighter" selected>Lighter / Additive</option>
+                                <option value="difference">Difference</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Line Glow -->
+                    <div class="pt-2 border-t border-white/5 grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Glow Radius</span>
+                                <span id="lblLineGlow">15px</span>
+                            </div>
+                            <input type="range" id="rngLineGlow" min="0" max="80" value="15" class="w-full">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Line Cap</label>
+                            <select id="selLineCap" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="round">Round</option>
+                                <option value="butt">Butt / Square</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. SQUIGGLES & CURVES -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 0L4 4m5.121 5.121L4 14.121"/></svg>
+                        4. Squiggles, Ribbons & Fluid Curves
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Squiggle Style</label>
+                            <select id="selSquiggleStyle" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="bezier" selected>Smooth Bezier Curves</option>
+                                <option value="scribble">Sharp Scribble</option>
+                                <option value="ribbon">Tapered Ribbon</option>
+                                <option value="tube">3D Tube Effect</option>
+                                <option value="flow">Noise Flow Field Lines</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Squiggle Count</span>
+                                <span id="lblSquiggleCount">35</span>
+                            </div>
+                            <input type="range" id="rngSquiggleCount" min="0" max="200" value="35" class="w-full">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Complexity / Points</span>
+                                <span id="lblSquigglePoints">6</span>
+                            </div>
+                            <input type="range" id="rngSquigglePoints" min="3" max="20" value="6" class="w-full">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Thickness (Min-Max)</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <input type="number" id="numSquiggleThickMin" value="10" min="1" max="200" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                                <input type="number" id="numSquiggleThickMax" value="60" min="1" max="200" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Tapering</label>
+                            <select id="selSquiggleTaper" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="none">Uniform Thickness</option>
+                                <option value="both" selected>Taper Both Ends</option>
+                                <option value="start">Taper Start Only</option>
+                                <option value="end">Taper End Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Fill Mode</label>
+                            <select id="selSquiggleFill" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="stroke" selected>Stroke Outline</option>
+                                <option value="filled">Filled Shape Blob</option>
+                                <option value="striped">Striped Band</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. FLOW FIELD & SYMMETRY -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                        5. Flow Field Noise & Symmetry
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Symmetry & Mirroring Mode</label>
+                        <select id="selSymmetry" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                            <option value="none" selected>None (Organic Asymmetric)</option>
+                            <option value="horizontal">Horizontal Mirror (Left / Right)</option>
+                            <option value="vertical">Vertical Mirror (Top / Bottom)</option>
+                            <option value="quad">Quad Mirror (4 Quadrants)</option>
+                            <option value="radial3">Radial Mandala (3-Way)</option>
+                            <option value="radial6">Radial Mandala (6-Way)</option>
+                            <option value="radial12">Radial Mandala (12-Way)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Noise Scale</span>
+                                <span id="lblNoiseScale">0.002</span>
+                            </div>
+                            <input type="range" id="rngNoiseScale" min="0.0005" max="0.01" step="0.0005" value="0.002" class="w-full">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Vector Force</span>
+                                <span id="lblNoiseForce">25</span>
+                            </div>
+                            <input type="range" id="rngNoiseForce" min="5" max="100" value="25" class="w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. COLOR PALETTE BUILDER -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                        6. Color Palette Builder
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Palette Presets</label>
+                        <select id="selPalettePreset" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                            <option value="neon" selected>Cyberpunk Neon</option>
+                            <option value="pastel">Dreamy Pastel</option>
+                            <option value="sunset">Warm Sunset</option>
+                            <option value="gold">Gold & Obsidian</option>
+                            <option value="earthy">Earthy Forest</option>
+                            <option value="monochrome">Monochrome Slate</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-400 mb-1">Active Palette Colors (5 Swatches)</label>
+                        <div class="grid grid-cols-5 gap-1">
+                            <input type="color" id="colPal1" value="#ff007f" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colPal2" value="#00f0ff" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colPal3" value="#7000ff" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colPal4" value="#ffb703" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                            <input type="color" id="colPal5" value="#ffffff" class="w-full h-8 rounded bg-slate-800 cursor-pointer border border-slate-700">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Saturation Shift</span>
+                                <span id="lblSat">0%</span>
+                            </div>
+                            <input type="range" id="rngSat" min="-100" max="100" value="0" class="w-full">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Brightness Shift</span>
+                                <span id="lblBright">0%</span>
+                            </div>
+                            <input type="range" id="rngBright" min="-50" max="50" value="0" class="w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. FLOATING GEOMETRIC ACCENTS -->
+            <div class="accordion-item rounded-xl bg-white/5 overflow-hidden border border-white/5">
+                <button class="accordion-header w-full p-3 text-left font-semibold text-xs text-slate-200 flex justify-between items-center hover:bg-white/5 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2V4zM4 7a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2V7zM18 7a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2V7z"/></svg>
+                        7. Floating Geometric Accents
+                    </span>
+                    <svg class="w-4 h-4 transform transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="accordion-content p-3 space-y-3 text-xs bg-slate-900/40">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Accent Element Type</label>
+                            <select id="selAccentType" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-2 focus:outline-none">
+                                <option value="mixed" selected>Mixed (Dots, Crosses, Rings)</option>
+                                <option value="dots">Floating Dots</option>
+                                <option value="crosses">Crosses (+)</option>
+                                <option value="rings">Rings & Circles</option>
+                                <option value="triangles">Triangles</option>
+                                <option value="stars">Sparkle Stars</option>
+                                <option value="micro">Micro Squiggles</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Accent Count</span>
+                                <span id="lblAccentCount">60</span>
+                            </div>
+                            <input type="range" id="rngAccentCount" min="0" max="250" value="60" class="w-full">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Size Range</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <input type="number" id="numAccentSizeMin" value="8" min="2" max="200" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                                <input type="number" id="numAccentSizeMax" value="45" min="2" max="200" class="w-1/2 bg-slate-800 text-slate-200 border border-slate-700 rounded p-1">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>Opacity Max</span>
+                                <span id="lblAccentOpacity">0.8</span>
+                            </div>
+                            <input type="range" id="rngAccentOpacity" min="0.1" max="1" step="0.1" value="0.8" class="w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="p-3 border-t border-white/10 bg-slate-900/60 text-center text-[10px] text-slate-400 flex justify-between items-center">
+            <span>Press <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300">H</kbd> to hide controls</span>
+            <span>Created with HTML5 Canvas</span>
+        </div>
+    </aside>
+
+    <script>
+        // ==========================================
+        // SEEDABLE PRNG & NOISE ALGORITHMS
+        // ==========================================
+        class Mulberry32 {
+            constructor(seed) {
+                this.seed = seed >>> 0;
+            }
+            next() {
+                var t = this.seed += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+            range(min, max) { return min + this.next() * (max - min); }
+            int(min, max) { return Math.floor(this.range(min, max + 1)); }
+            choice(arr) { return arr[this.int(0, arr.length - 1)]; }
+        }
+
+        // Lightweight Simplex 2D Noise Implementation
+        class FastSimplexNoise {
+            constructor(prng) {
+                this.p = new Uint8Array(256);
+                for (let i = 0; i < 256; i++) this.p[i] = Math.floor(prng.next() * 256);
+                this.perm = new Uint8Array(512);
+                this.permMod12 = new Uint8Array(512);
+                for (let i = 0; i < 512; i++) {
+                    this.perm[i] = this.p[i & 255];
+                    this.permMod12[i] = (this.perm[i] % 12);
+                }
+            }
+            static G2 = (3.0 - Math.sqrt(3.0)) / 6.0;
+            static F2 = 0.5 * (Math.sqrt(3.0) - 1.0);
+            static grad3 = [
+                [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+                [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+                [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+            ];
+            noise2D(xin, yin) {
+                let n0, n1, n2;
+                const s = (xin + yin) * FastSimplexNoise.F2;
+                const i = Math.floor(xin + s);
+                const j = Math.floor(yin + s);
+                const t = (i + j) * FastSimplexNoise.G2;
+                const X0 = i - t;
+                const Y0 = j - t;
+                const x0 = xin - X0;
+                const y0 = yin - Y0;
+
+                let i1, j1;
+                if (x0 > y0) { i1 = 1; j1 = 0; } else { i1 = 0; j1 = 1; }
+
+                const x1 = x0 - i1 + FastSimplexNoise.G2;
+                const y1 = y0 - j1 + FastSimplexNoise.G2;
+                const x2 = x0 - 1.0 + 2.0 * FastSimplexNoise.G2;
+                const y2 = y0 - 1.0 + 2.0 * FastSimplexNoise.G2;
+
+                const ii = i & 255;
+                const jj = j & 255;
+
+                let t0 = 0.5 - x0*x0 - y0*y0;
+                if (t0 < 0) n0 = 0.0;
+                else {
+                    t0 *= t0;
+                    const gi0 = this.permMod12[ii + this.perm[jj]];
+                    const g0 = FastSimplexNoise.grad3[gi0];
+                    n0 = t0 * t0 * (g0[0]*x0 + g0[1]*y0);
+                }
+
+                let t1 = 0.5 - x1*x1 - y1*y1;
+                if (t1 < 0) n1 = 0.0;
+                else {
+                    t1 *= t1;
+                    const gi1 = this.permMod12[ii + i1 + this.perm[jj + j1]];
+                    const g1 = FastSimplexNoise.grad3[gi1];
+                    n1 = t1 * t1 * (g1[0]*x1 + g1[1]*y1);
+                }
+
+                let t2 = 0.5 - x2*x2 - y2*y2;
+                if (t2 < 0) n2 = 0.0;
+                else {
+                    t2 *= t2;
+                    const gi2 = this.permMod12[ii + 1 + this.perm[jj + 1]];
+                    const g2 = FastSimplexNoise.grad3[gi2];
+                    n2 = t2 * t2 * (g2[0]*x2 + g2[1]*y2);
+                }
+
+                return 70.0 * (n0 + n1 + n2);
+            }
+        }
+
+        // ==========================================
+        // MAIN ART ENGINE STATE & BINDINGS
+        // ==========================================
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d');
+        const offCanvas = document.createElement('canvas');
+        const offCtx = offCanvas.getContext('2d');
+
+        let prng = new Mulberry32(123456);
+        let simplex = new FastSimplexNoise(prng);
+
+        const state = {
+            width: 3840,
+            height: 2160,
+            seed: "123456",
+            
+            // BG
+            bgType: 'linear',
+            colBg1: '#0f172a',
+            colBg2: '#1e1b4b',
+            colBg3: '#311042',
+            colBg4: '#020617',
+            bgAngle: 135,
+            grain: 15,
+            vignette: 40,
+
+            // Lines
+            lineType: 'straight',
+            lineCount: 45,
+            lineThickMin: 2,
+            lineThickMax: 12,
+            lineOpacityMin: 0.1,
+            lineOpacityMax: 0.7,
+            lineDash: 'solid',
+            lineBlend: 'lighter',
+            lineGlow: 15,
+            lineCap: 'round',
+
+            // Squiggles
+            squiggleStyle: 'bezier',
+            squiggleCount: 35,
+            squigglePoints: 6,
+            squiggleThickMin: 10,
+            squiggleThickMax: 60,
+            squiggleTaper: 'both',
+            squiggleFill: 'stroke',
+
+            // Flow & Symmetry
+            symmetry: 'none',
+            noiseScale: 0.002,
+            noiseForce: 25,
+
+            // Colors
+            palette: ['#ff007f', '#00f0ff', '#7000ff', '#ffb703', '#ffffff'],
+            satShift: 0,
+            brightShift: 0,
+
+            // Accents
+            accentType: 'mixed',
+            accentCount: 60,
+            accentSizeMin: 8,
+            accentSizeMax: 45,
+            accentOpacity: 0.8
+        };
+
+        // Preset Color Palettes
+        const PALETTE_PRESETS = {
+            neon: ['#ff007f', '#00f0ff', '#7000ff', '#ffb703', '#ffffff'],
+            pastel: ['#f472b6', '#38bdf8', '#c084fc', '#fde047', '#f8fafc'],
+            sunset: ['#ff4800', '#ff7b00', '#ffb700', '#e01e5a', '#ffffff'],
+            gold: ['#d4af37', '#f3e5ab', '#aa7c11', '#5c4033', '#ffffff'],
+            earthy: ['#2d6a4f', '#52b788', '#b7e4c7', '#d8f3dc', '#1b4332'],
+            monochrome: ['#f8fafc', '#94a3b8', '#475569', '#1e293b', '#cbd5e1']
+        };
+
+        // Preset Complete Themes
+        const THEME_PRESETS = {
+            cyberpunk: {
+                bgType: 'linear', colBg1: '#050515', colBg2: '#12002b', colBg3: '#2a004f', colBg4: '#000000',
+                lineType: 'straight', lineCount: 60, lineBlend: 'lighter', lineGlow: 20,
+                squiggleStyle: 'tube', squiggleCount: 25,
+                palette: ['#ff007f', '#00f0ff', '#9d00ff', '#ffe600', '#ffffff'],
+                accentType: 'crosses', accentCount: 80
+            },
+            memphis: {
+                bgType: 'solid', colBg1: '#f8fafc',
+                lineType: 'sine', lineCount: 30, lineBlend: 'source-over', lineGlow: 0,
+                squiggleStyle: 'scribble', squiggleCount: 40, squiggleTaper: 'none',
+                palette: ['#ff3366', '#33ccff', '#ffcc00', '#111111', '#00cc66'],
+                accentType: 'mixed', accentCount: 100
+            },
+            minimalist: {
+                bgType: 'linear', colBg1: '#18181b', colBg2: '#09090b',
+                lineType: 'concentric', lineCount: 15, lineThickMin: 1, lineThickMax: 3, lineGlow: 0,
+                squiggleStyle: 'bezier', squiggleCount: 8, squiggleThickMin: 2, squiggleThickMax: 8,
+                palette: ['#f4f4f5', '#a1a1aa', '#71717a', '#d4d4d8', '#ffffff'],
+                accentType: 'dots', accentCount: 30
+            },
+            gold: {
+                bgType: 'radial', colBg1: '#1c1917', colBg2: '#0c0a09',
+                lineType: 'rays', lineCount: 50, lineBlend: 'screen', lineGlow: 10,
+                squiggleStyle: 'ribbon', squiggleCount: 20,
+                palette: ['#d4af37', '#f3e5ab', '#aa7c11', '#fff8dc', '#8b6508'],
+                accentType: 'rings', accentCount: 40
+            },
+            fluid: {
+                bgType: 'mesh', colBg1: '#0f172a', colBg2: '#0284c7', colBg3: '#4f46e5', colBg4: '#030712',
+                lineType: 'none',
+                squiggleStyle: 'flow', squiggleCount: 120, squiggleThickMin: 5, squiggleThickMax: 35,
+                palette: ['#38bdf8', '#818cf8', '#c084fc', '#34d399', '#ffffff'],
+                symmetry: 'horizontal', accentType: 'none'
+            },
+            cosmic: {
+                bgType: 'radial', colBg1: '#1e1b4b', colBg2: '#090514',
+                lineType: 'rays', lineCount: 80, lineGlow: 25,
+                squiggleStyle: 'bezier', squiggleCount: 30,
+                symmetry: 'radial6',
+                palette: ['#ec4899', '#8b5cf6', '#06b6d4', '#f43f5e', '#ffffff'],
+                accentType: 'stars', accentCount: 120
+            },
+            chalk: {
+                bgType: 'solid', colBg1: '#1e293b',
+                lineType: 'grid', lineCount: 20, lineDash: 'dashed', lineGlow: 0,
+                squiggleStyle: 'scribble', squiggleCount: 50, squiggleThickMin: 2, squiggleThickMax: 6,
+                palette: ['#ffffff', '#fef08a', '#fbcfe8', '#bae6fd', '#f5f5f5'],
+                accentType: 'micro', accentCount: 90
+            }
+        };
+
+        // ==========================================
+        // COLOR HELPERS
+        // ==========================================
+        function hexToRgb(hex) {
+            let c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(x => x + x).join('');
+            const num = parseInt(c, 16);
+            return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+        }
+
+        function adjustColor(hex, satOffset, brightOffset, alpha = 1) {
+            let { r, g, b } = hexToRgb(hex);
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+
+            s = Math.max(0, Math.min(1, s + satOffset / 100));
+            l = Math.max(0, Math.min(1, l + brightOffset / 100));
+
+            return `hsla(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%, ${alpha})`;
+        }
+
+        function getRandomPaletteColor(alpha = 1) {
+            const hex = prng.choice(state.palette);
+            return adjustColor(hex, state.satShift, state.brightShift, alpha);
+        }
+
+        // ==========================================
+        // DRAWING FUNCTIONS
+        // ==========================================
+        function drawBackground(targetCtx, w, h) {
+            const bg1 = adjustColor(state.colBg1, state.satShift, state.brightShift);
+            const bg2 = adjustColor(state.colBg2, state.satShift, state.brightShift);
+            const bg3 = adjustColor(state.colBg3, state.satShift, state.brightShift);
+            const bg4 = adjustColor(state.colBg4, state.satShift, state.brightShift);
+
+            if (state.bgType === 'solid') {
+                targetCtx.fillStyle = bg1;
+                targetCtx.fillRect(0, 0, w, h);
+            } else if (state.bgType === 'linear') {
+                const rad = (state.bgAngle * Math.PI) / 180;
+                const cx = w / 2, cy = h / 2;
+                const diag = Math.sqrt(w * w + h * h) / 2;
+                const x0 = cx - Math.cos(rad) * diag;
+                const y0 = cy - Math.sin(rad) * diag;
+                const x1 = cx + Math.cos(rad) * diag;
+                const y1 = cy + Math.sin(rad) * diag;
+
+                const grad = targetCtx.createLinearGradient(x0, y0, x1, y1);
+                grad.addColorStop(0, bg1);
+                grad.addColorStop(0.33, bg2);
+                grad.addColorStop(0.66, bg3);
+                grad.addColorStop(1, bg4);
+                targetCtx.fillStyle = grad;
+                targetCtx.fillRect(0, 0, w, h);
+            } else if (state.bgType === 'radial') {
+                const grad = targetCtx.createRadialGradient(w / 2, h / 2, 50, w / 2, h / 2, Math.max(w, h) * 0.7);
+                grad.addColorStop(0, bg1);
+                grad.addColorStop(0.4, bg2);
+                grad.addColorStop(0.8, bg3);
+                grad.addColorStop(1, bg4);
+                targetCtx.fillStyle = grad;
+                targetCtx.fillRect(0, 0, w, h);
+            } else if (state.bgType === 'conic') {
+                const grad = targetCtx.createConicGradient((state.bgAngle * Math.PI) / 180, w / 2, h / 2);
+                grad.addColorStop(0, bg1);
+                grad.addColorStop(0.25, bg2);
+                grad.addColorStop(0.5, bg3);
+                grad.addColorStop(0.75, bg4);
+                grad.addColorStop(1, bg1);
+                targetCtx.fillStyle = grad;
+                targetCtx.fillRect(0, 0, w, h);
+            } else if (state.bgType === 'mesh') {
+                targetCtx.fillStyle = bg4;
+                targetCtx.fillRect(0, 0, w, h);
+
+                const points = [
+                    { x: w * 0.2, y: h * 0.2, color: bg1, r: w * 0.5 },
+                    { x: w * 0.8, y: h * 0.3, color: bg2, r: w * 0.6 },
+                    { x: w * 0.3, y: h * 0.8, color: bg3, r: w * 0.55 },
+                    { x: w * 0.7, y: h * 0.75, color: bg1, r: w * 0.45 }
+                ];
+
+                targetCtx.globalCompositeOperation = 'screen';
+                points.forEach(p => {
+                    const g = targetCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+                    g.addColorStop(0, p.color);
+                    g.addColorStop(1, 'transparent');
+                    targetCtx.fillStyle = g;
+                    targetCtx.beginPath();
+                    targetCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    targetCtx.fill();
+                });
+                targetCtx.globalCompositeOperation = 'source-over';
+            }
+        }
+
+        function drawLines(targetCtx, w, h) {
+            if (state.lineType === 'none' || state.lineCount <= 0) return;
+
+            targetCtx.save();
+            targetCtx.globalCompositeOperation = state.lineBlend;
+            if (state.lineGlow > 0) {
+                targetCtx.shadowBlur = state.lineGlow;
+                targetCtx.shadowColor = getRandomPaletteColor(0.8);
+            }
+
+            for (let i = 0; i < state.lineCount; i++) {
+                targetCtx.beginPath();
+                const opacity = prng.range(state.lineOpacityMin, state.lineOpacityMax);
+                const thick = prng.range(state.lineThickMin, state.lineThickMax);
+
+                targetCtx.strokeStyle = getRandomPaletteColor(opacity);
+                targetCtx.lineWidth = thick;
+                targetCtx.lineCap = state.lineCap;
+
+                if (state.lineDash === 'dashed') targetCtx.setLineDash([thick * 3, thick * 2]);
+                else if (state.lineDash === 'dotted') targetCtx.setLineDash([thick, thick]);
+                else targetCtx.setLineDash([]);
+
+                if (state.lineType === 'straight') {
+                    const x1 = prng.range(-w * 0.2, w * 1.2);
+                    const y1 = prng.range(-h * 0.2, h * 1.2);
+                    const angle = (state.bgAngle + prng.range(-30, 30)) * Math.PI / 180;
+                    const len = Math.max(w, h) * 1.5;
+                    targetCtx.moveTo(x1, y1);
+                    targetCtx.lineTo(x1 + Math.cos(angle) * len, y1 + Math.sin(angle) * len);
+                } else if (state.lineType === 'sine') {
+                    const startY = prng.range(0, h);
+                    const freq = prng.range(0.001, 0.005);
+                    const amp = prng.range(50, 300);
+                    targetCtx.moveTo(0, startY);
+                    for (let x = 0; x < w; x += 30) {
+                        targetCtx.lineTo(x, startY + Math.sin(x * freq) * amp);
+                    }
+                } else if (state.lineType === 'concentric') {
+                    const cx = w / 2, cy = h / 2;
+                    const r = (i + 1) * (Math.max(w, h) * 0.6 / state.lineCount);
+                    targetCtx.arc(cx, cy, r, 0, Math.PI * 2);
+                } else if (state.lineType === 'grid') {
+                    const step = w / Math.sqrt(state.lineCount);
+                    if (i % 2 === 0) {
+                        const x = (i / 2) * step;
+                        targetCtx.moveTo(x, 0); targetCtx.lineTo(x, h);
+                    } else {
+                        const y = Math.floor(i / 2) * step;
+                        targetCtx.moveTo(0, y); targetCtx.lineTo(w, y);
+                    }
+                } else if (state.lineType === 'rays') {
+                    const cx = w / 2, cy = h / 2;
+                    const angle = (i / state.lineCount) * Math.PI * 2;
+                    targetCtx.moveTo(cx, cy);
+                    targetCtx.lineTo(cx + Math.cos(angle) * w, cy + Math.sin(angle) * w);
+                }
+
+                targetCtx.stroke();
+            }
+            targetCtx.restore();
+        }
+
+        function drawSquiggles(targetCtx, w, h) {
+            if (state.squiggleCount <= 0) return;
+
+            for (let i = 0; i < state.squiggleCount; i++) {
+                targetCtx.save();
+                const color = getRandomPaletteColor(prng.range(0.4, 0.95));
+                const thickMin = state.squiggleThickMin;
+                const thickMax = state.squiggleThickMax;
+                const ptsCount = state.squigglePoints;
+
+                // Generate Path Control Points
+                const points = [];
+                let currX = prng.range(w * 0.1, w * 0.9);
+                let currY = prng.range(h * 0.1, h * 0.9);
+                points.push({ x: currX, y: currY });
+
+                for (let p = 0; p < ptsCount; p++) {
+                    currX += prng.range(-w * 0.25, w * 0.25);
+                    currY += prng.range(-h * 0.25, h * 0.25);
+                    points.push({ x: currX, y: currY });
+                }
+
+                if (state.squiggleStyle === 'flow') {
+                    // Draw noise field particle path
+                    targetCtx.beginPath();
+                    let fx = prng.range(0, w);
+                    let fy = prng.range(0, h);
+                    targetCtx.moveTo(fx, fy);
+                    targetCtx.strokeStyle = color;
+                    targetCtx.lineWidth = prng.range(thickMin, thickMax);
+                    targetCtx.lineCap = 'round';
+
+                    for (let step = 0; step < 80; step++) {
+                        const angle = simplex.noise2D(fx * state.noiseScale, fy * state.noiseScale) * Math.PI * 4;
+                        fx += Math.cos(angle) * state.noiseForce;
+                        fy += Math.sin(angle) * state.noiseForce;
+                        targetCtx.lineTo(fx, fy);
+                    }
+                    targetCtx.stroke();
+                } else if (state.squiggleStyle === 'scribble') {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(points[0].x, points[0].y);
+                    for (let p = 1; p < points.length; p++) {
+                        targetCtx.lineTo(points[p].x, points[p].y);
+                    }
+                    targetCtx.strokeStyle = color;
+                    targetCtx.lineWidth = prng.range(thickMin, thickMax);
+                    targetCtx.lineJoin = 'miter';
+                    targetCtx.stroke();
+                } else if (state.squiggleStyle === 'tube') {
+                    // 3D Tube Effect (Multiple rendered layered strokes)
+                    const baseThick = prng.range(thickMin, thickMax);
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(points[0].x, points[0].y);
+                    for (let p = 1; p < points.length - 1; p++) {
+                        const xc = (points[p].x + points[p + 1].x) / 2;
+                        const yc = (points[p].y + points[p + 1].y) / 2;
+                        targetCtx.quadraticCurveTo(points[p].x, points[p].y, xc, yc);
+                    }
+                    
+                    // Outer shadow stroke
+                    targetCtx.strokeStyle = 'rgba(0,0,0,0.5)';
+                    targetCtx.lineWidth = baseThick;
+                    targetCtx.lineCap = 'round';
+                    targetCtx.stroke();
+
+                    // Main color stroke
+                    targetCtx.strokeStyle = color;
+                    targetCtx.lineWidth = baseThick * 0.8;
+                    targetCtx.stroke();
+
+                    // Inner highlight line
+                    targetCtx.strokeStyle = 'rgba(255,255,255,0.7)';
+                    targetCtx.lineWidth = baseThick * 0.25;
+                    targetCtx.stroke();
+                } else {
+                    // Smooth Bezier Curve or Tapered Ribbon
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(points[0].x, points[0].y);
+                    for (let p = 1; p < points.length - 1; p++) {
+                        const xc = (points[p].x + points[p + 1].x) / 2;
+                        const yc = (points[p].y + points[p + 1].y) / 2;
+                        targetCtx.quadraticCurveTo(points[p].x, points[p].y, xc, yc);
+                    }
+
+                    if (state.squiggleFill === 'filled') {
+                        targetCtx.fillStyle = color;
+                        targetCtx.closePath();
+                        targetCtx.fill();
+                    } else {
+                        targetCtx.strokeStyle = color;
+                        targetCtx.lineWidth = prng.range(thickMin, thickMax);
+                        targetCtx.lineCap = 'round';
+                        targetCtx.stroke();
+                    }
+                }
+                targetCtx.restore();
+            }
+        }
+
+        function drawAccents(targetCtx, w, h) {
+            if (state.accentType === 'none' || state.accentCount <= 0) return;
+
+            for (let i = 0; i < state.accentCount; i++) {
+                targetCtx.save();
+                const x = prng.range(0, w);
+                const y = prng.range(0, h);
+                const size = prng.range(state.accentSizeMin, state.accentSizeMax);
+                const color = getRandomPaletteColor(prng.range(0.2, state.accentOpacity));
+                const type = state.accentType === 'mixed' ? prng.choice(['dots', 'crosses', 'rings', 'triangles', 'stars', 'micro']) : state.accentType;
+
+                targetCtx.translate(x, y);
+                targetCtx.rotate(prng.range(0, Math.PI * 2));
+                targetCtx.fillStyle = color;
+                targetCtx.strokeStyle = color;
+                targetCtx.lineWidth = Math.max(2, size * 0.15);
+
+                if (type === 'dots') {
+                    targetCtx.beginPath();
+                    targetCtx.arc(0, 0, size / 2, 0, Math.PI * 2);
+                    targetCtx.fill();
+                } else if (type === 'crosses') {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(-size / 2, 0); targetCtx.lineTo(size / 2, 0);
+                    targetCtx.moveTo(0, -size / 2); targetCtx.lineTo(0, size / 2);
+                    targetCtx.stroke();
+                } else if (type === 'rings') {
+                    targetCtx.beginPath();
+                    targetCtx.arc(0, 0, size / 2, 0, Math.PI * 2);
+                    targetCtx.stroke();
+                } else if (type === 'triangles') {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(0, -size / 2);
+                    targetCtx.lineTo(size / 2, size / 2);
+                    targetCtx.lineTo(-size / 2, size / 2);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                } else if (type === 'stars') {
+                    targetCtx.beginPath();
+                    for (let s = 0; s < 4; s++) {
+                        targetCtx.rotate(Math.PI / 4);
+                        targetCtx.moveTo(-size / 2, 0); targetCtx.lineTo(size / 2, 0);
+                    }
+                    targetCtx.stroke();
+                } else if (type === 'micro') {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(-size, 0);
+                    targetCtx.quadraticCurveTo(0, -size, size, 0);
+                    targetCtx.stroke();
+                }
+
+                targetCtx.restore();
+            }
+        }
+
+        function applyFilmGrainAndVignette(targetCtx, w, h) {
+            // Film Grain
+            if (state.grain > 0) {
+                const grainCanvas = document.createElement('canvas');
+                grainCanvas.width = 256;
+                grainCanvas.height = 256;
+                const gCtx = grainCanvas.getContext('2d');
+                const imgData = gCtx.createImageData(256, 256);
+                const data = imgData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const val = Math.floor(Math.random() * 255);
+                    data[i] = val; data[i+1] = val; data[i+2] = val;
+                    data[i+3] = Math.floor((state.grain / 100) * 255 * 0.3);
+                }
+                gCtx.putImageData(imgData, 0, 0);
+
+                targetCtx.save();
+                targetCtx.fillStyle = targetCtx.createPattern(grainCanvas, 'repeat');
+                targetCtx.globalCompositeOperation = 'overlay';
+                targetCtx.fillRect(0, 0, w, h);
+                targetCtx.restore();
+            }
+
+            // Vignette
+            if (state.vignette > 0) {
+                targetCtx.save();
+                const radGrad = targetCtx.createRadialGradient(w / 2, h / 2, Math.max(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7);
+                radGrad.addColorStop(0, 'rgba(0,0,0,0)');
+                radGrad.addColorStop(1, `rgba(0,0,0,${state.vignette / 100})`);
+                targetCtx.fillStyle = radGrad;
+                targetCtx.fillRect(0, 0, w, h);
+                targetCtx.restore();
+            }
+        }
+
+        // ==========================================
+        // RENDER PIPELINE
+        // ==========================================
+        function render() {
+            const startTime = performance.now();
+            
+            // Sync canvas sizes
+            const w = state.width;
+            const h = state.height;
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w; canvas.height = h;
+                offCanvas.width = w; offCanvas.height = h;
+            }
+
+            // Initialize PRNG with Seed
+            let seedNum = 0;
+            for (let i = 0; i < state.seed.length; i++) seedNum += state.seed.charCodeAt(i) * (i + 1);
+            prng = new Mulberry32(seedNum || 123456);
+            simplex = new FastSimplexNoise(prng);
+
+            // Draw Base Art on Offscreen Layer
+            offCtx.clearRect(0, 0, w, h);
+            drawBackground(offCtx, w, h);
+            drawLines(offCtx, w, h);
+            drawSquiggles(offCtx, w, h);
+            drawAccents(offCtx, w, h);
+
+            // Apply Symmetry to Main Canvas
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+
+            if (state.symmetry === 'none') {
+                ctx.drawImage(offCanvas, 0, 0);
+            } else if (state.symmetry === 'horizontal') {
+                ctx.drawImage(offCanvas, 0, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(offCanvas, -w, 0);
+            } else if (state.symmetry === 'vertical') {
+                ctx.drawImage(offCanvas, 0, 0);
+                ctx.scale(1, -1);
+                ctx.drawImage(offCanvas, 0, -h);
+            } else if (state.symmetry === 'quad') {
+                ctx.drawImage(offCanvas, 0, 0);
+                ctx.scale(-1, 1); ctx.drawImage(offCanvas, -w, 0);
+                ctx.scale(1, -1); ctx.drawImage(offCanvas, -w, -h);
+                ctx.scale(-1, 1); ctx.drawImage(offCanvas, 0, -h);
+            } else if (state.symmetry.startsWith('radial')) {
+                const count = parseInt(state.symmetry.replace('radial', '')) || 6;
+                ctx.translate(w / 2, h / 2);
+                for (let i = 0; i < count; i++) {
+                    ctx.rotate((Math.PI * 2) / count);
+                    ctx.drawImage(offCanvas, -w / 2, -h / 2);
+                }
+            }
+
+            ctx.restore();
+
+            // Post-processing Grain & Vignette directly on final canvas
+            applyFilmGrainAndVignette(ctx, w, h);
+
+            const duration = Math.round(performance.now() - startTime);
+            document.getElementById('statusText').innerText = `${w}x${h} • ${duration}ms`;
+        }
+
+        // Debounced Render for Silky Smooth Slider Dragging
+        let renderTimer = null;
+        function queueRender() {
+            if (renderTimer) clearTimeout(renderTimer);
+            renderTimer = setTimeout(render, 20);
+        }
+
+        // ==========================================
+        // UI BINDINGS & EVENT HANDLERS
+        // ==========================================
+        function bindInputs() {
+            // Accordion toggle
+            document.querySelectorAll('.accordion-header').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const content = btn.nextElementSibling;
+                    const icon = btn.querySelector('svg:last-child');
+                    content.classList.toggle('active');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            // Open first accordion by default
+            document.querySelector('.accordion-content').classList.add('active');
+
+            // Resolution Presets
+            const selRes = document.getElementById('selResolution');
+            const numW = document.getElementById('numWidth');
+            const numH = document.getElementById('numHeight');
+
+            selRes.addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    numW.disabled = false; numH.disabled = false;
+                } else {
+                    numW.disabled = true; numH.disabled = true;
+                    const [w, h] = e.target.value.split('x').map(Number);
+                    state.width = w; state.height = h;
+                    numW.value = w; numH.value = h;
+                    document.getElementById('btnExportResLabel').innerText = e.target.value.includes('7680') ? '8K' : '4K';
+                    queueRender();
+                }
+            });
+
+            numW.addEventListener('input', () => { state.width = parseInt(numW.value) || 1920; queueRender(); });
+            numH.addEventListener('input', () => { state.height = parseInt(numH.value) || 1080; queueRender(); });
+
+            // Random Seed
+            const txtSeed = document.getElementById('txtSeed');
+            txtSeed.addEventListener('input', (e) => { state.seed = e.target.value; queueRender(); });
+            document.getElementById('btnRandomSeed').addEventListener('click', () => {
+                state.seed = Math.floor(Math.random() * 999999).toString();
+                txtSeed.value = state.seed;
+                queueRender();
+            });
+
+            // Generic Element Input Bindings
+            const bindings = [
+                { id: 'selBgType', key: 'bgType' },
+                { id: 'colBg1', key: 'colBg1' },
+                { id: 'colBg2', key: 'colBg2' },
+                { id: 'colBg3', key: 'colBg3' },
+                { id: 'colBg4', key: 'colBg4' },
+                { id: 'rngBgAngle', key: 'bgAngle', lbl: 'lblBgAngle', unit: '°' },
+                { id: 'rngGrain', key: 'grain', lbl: 'lblGrain', unit: '%' },
+                { id: 'rngVignette', key: 'vignette', lbl: 'lblVignette', unit: '%' },
+
+                { id: 'selLineType', key: 'lineType' },
+                { id: 'rngLineCount', key: 'lineCount', lbl: 'lblLineCount' },
+                { id: 'numLineThickMin', key: 'lineThickMin' },
+                { id: 'numLineThickMax', key: 'lineThickMax' },
+                { id: 'numLineOpacityMin', key: 'lineOpacityMin' },
+                { id: 'numLineOpacityMax', key: 'lineOpacityMax' },
+                { id: 'selLineDash', key: 'lineDash' },
+                { id: 'selLineBlend', key: 'lineBlend' },
+                { id: 'rngLineGlow', key: 'lineGlow', lbl: 'lblLineGlow', unit: 'px' },
+                { id: 'selLineCap', key: 'lineCap' },
+
+                { id: 'selSquiggleStyle', key: 'squiggleStyle' },
+                { id: 'rngSquiggleCount', key: 'squiggleCount', lbl: 'lblSquiggleCount' },
+                { id: 'rngSquigglePoints', key: 'squigglePoints', lbl: 'lblSquigglePoints' },
+                { id: 'numSquiggleThickMin', key: 'squiggleThickMin' },
+                { id: 'numSquiggleThickMax', key: 'squiggleThickMax' },
+                { id: 'selSquiggleTaper', key: 'squiggleTaper' },
+                { id: 'selSquiggleFill', key: 'squiggleFill' },
+
+                { id: 'selSymmetry', key: 'symmetry' },
+                { id: 'rngNoiseScale', key: 'noiseScale', lbl: 'lblNoiseScale' },
+                { id: 'rngNoiseForce', key: 'noiseForce', lbl: 'lblNoiseForce' },
+
+                { id: 'colPal1', key: 'pal1' },
+                { id: 'colPal2', key: 'pal2' },
+                { id: 'colPal3', key: 'pal3' },
+                { id: 'colPal4', key: 'pal4' },
+                { id: 'colPal5', key: 'pal5' },
+                { id: 'rngSat', key: 'satShift', lbl: 'lblSat', unit: '%' },
+                { id: 'rngBright', key: 'brightShift', lbl: 'lblBright', unit: '%' },
+
+                { id: 'selAccentType', key: 'accentType' },
+                { id: 'rngAccentCount', key: 'accentCount', lbl: 'lblAccentCount' },
+                { id: 'numAccentSizeMin', key: 'accentSizeMin' },
+                { id: 'numAccentSizeMax', key: 'accentSizeMax' },
+                { id: 'rngAccentOpacity', key: 'accentOpacity', lbl: 'lblAccentOpacity' }
+            ];
+
+            bindings.forEach(b => {
+                const el = document.getElementById(b.id);
+                if (!el) return;
+                el.addEventListener('input', (e) => {
+                    let val = e.target.value;
+                    if (e.target.type === 'number' || e.target.type === 'range') val = parseFloat(val);
+                    
+                    if (b.key.startsWith('pal')) {
+                        const idx = parseInt(b.key.replace('pal', '')) - 1;
+                        state.palette[idx] = val;
+                    } else {
+                        state[b.key] = val;
+                    }
+
+                    if (b.lbl) {
+                        const lblEl = document.getElementById(b.lbl);
+                        if (lblEl) lblEl.innerText = val + (b.unit || '');
+                    }
+                    queueRender();
+                });
+            });
+
+            // Preset Palettes
+            document.getElementById('selPalettePreset').addEventListener('change', (e) => {
+                const preset = PALETTE_PRESETS[e.target.value];
+                if (preset) {
+                    state.palette = [...preset];
+                    for (let i = 0; i < 5; i++) {
+                        document.getElementById(`colPal${i + 1}`).value = preset[i];
+                    }
+                    queueRender();
+                }
+            });
+
+            // Preset Themes
+            document.getElementById('selPresetTheme').addEventListener('change', (e) => {
+                const theme = THEME_PRESETS[e.target.value];
+                if (theme) {
+                    Object.assign(state, theme);
+                    syncUIFromState();
+                    queueRender();
+                }
+            });
+
+            // Randomize All Button
+            document.getElementById('btnRandomizeAll').addEventListener('click', () => {
+                state.seed = Math.floor(Math.random() * 999999).toString();
+                txtSeed.value = state.seed;
+                
+                // Pick random theme palette
+                const themeKeys = Object.keys(THEME_PRESETS);
+                const randomTheme = THEME_PRESETS[prng.choice(themeKeys)];
+                Object.assign(state, randomTheme);
+
+                syncUIFromState();
+                queueRender();
+            });
+
+            // Toggle UI Panel (Hotkey H)
+            const sidebar = document.getElementById('sidebar');
+            const btnToggleUI = document.getElementById('btnToggleUI');
+            const lblToggleUI = document.getElementById('lblToggleUI');
+
+            function toggleUI() {
+                sidebar.classList.toggle('-ml-[420px]');
+                sidebar.classList.toggle('sm:-ml-[420px]');
+                lblToggleUI.innerText = sidebar.classList.contains('-ml-[420px]') ? 'Show Panel' : 'Hide Panel';
+            }
+
+            btnToggleUI.addEventListener('click', toggleUI);
+            window.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'h' && e.target.tagName !== 'INPUT') {
+                    toggleUI();
+                }
+            });
+
+            // High Resolution PNG Export
+            document.getElementById('btnExport').addEventListener('click', () => {
+                const btn = document.getElementById('btnExport');
+                btn.classList.add('opacity-50', 'pointer-events-none');
+                
+                setTimeout(() => {
+                    try {
+                        const dataUrl = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        link.download = `Abstract_Background_${state.width}x${state.height}_${Date.now()}.png`;
+                        link.href = dataUrl;
+                        link.click();
+                        link.remove();
+                    } catch (err) {
+                        alert('Export failed: Canvas memory limit exceeded.');
+                    } finally {
+                        btn.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                }, 50);
+            });
+        }
+
+        function syncUIFromState() {
+            document.getElementById('selBgType').value = state.bgType;
+            document.getElementById('colBg1').value = state.colBg1;
+            document.getElementById('colBg2').value = state.colBg2;
+            document.getElementById('colBg3').value = state.colBg3;
+            document.getElementById('colBg4').value = state.colBg4;
+            document.getElementById('selLineType').value = state.lineType;
+            document.getElementById('rngLineCount').value = state.lineCount;
+            document.getElementById('lblLineCount').innerText = state.lineCount;
+            document.getElementById('selSquiggleStyle').value = state.squiggleStyle;
+            document.getElementById('rngSquiggleCount').value = state.squiggleCount;
+            document.getElementById('lblSquiggleCount').innerText = state.squiggleCount;
+            document.getElementById('selSymmetry').value = state.symmetry;
+            document.getElementById('selAccentType').value = state.accentType;
+            document.getElementById('rngAccentCount').value = state.accentCount;
+            document.getElementById('lblAccentCount').innerText = state.accentCount;
+
+            for (let i = 0; i < 5; i++) {
+                if (state.palette[i]) {
+                    document.getElementById(`colPal${i + 1}`).value = state.palette[i];
+                }
+            }
+        }
+
+        // Initialize App on Window Load
+        window.addEventListener('load', () => {
+            bindInputs();
+            render();
+        });
+    </script>
+</body>
+</html>
