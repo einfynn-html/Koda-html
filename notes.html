@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<style>
+:root { --accent: #3b82f6; --bg: transparent; --text: #fff; --glass: rgba(0,0,0,0.4); }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
+.sidebar { width: 240px; border-right: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+.sidebar-header { padding: 15px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+.btn { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+.btn:hover { filter: brightness(1.2); }
+.btn-danger { background: #ef4444; }
+.editor-container { flex: 1; display: flex; flex-direction: column; background: transparent; }
+.tabs-header { display: flex; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); overflow-x: auto; }
+.tab { padding: 10px 14px; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #aaa; background: transparent; white-space: nowrap; }
+.tab.active { background: var(--glass); color: white; border-bottom: 2px solid var(--accent); }
+.tab-close { cursor: pointer; padding: 2px 5px; border-radius: 50%; font-size: 0.7rem; }
+.tab-close:hover { background: rgba(255,255,255,0.2); color: #ef4444; }
+.editor-inner { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+.input-title { background: var(--glass); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 12px; margin-bottom: 15px; border-radius: 6px; font-size: 1.1rem; outline: none; }
+.input-title:focus { border-color: var(--accent); }
+.textarea-content { flex: 1; background: var(--glass); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 6px; font-size: 0.95rem; outline: none; resize: none; margin-bottom: 15px; font-family: inherit; }
+.textarea-content:focus { border-color: var(--accent); }
+.actions { display: flex; gap: 10px; justify-content: flex-end; }
+#infoMsg { flex: 1; font-size: 0.85rem; color: #a1a1aa; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+   <div class="sidebar">
+       <div class="sidebar-header">
+           <span>Meine Notizen</span>
+           <button class="btn" onclick="newFile()">+ Neu</button>
+       </div>
+       <div style="padding: 15px; font-size: 0.8rem; color: #aaa;">Hinweis: Dateien werden im Hauptordner auf deinem PC gespeichert.</div>
+   </div>
+   <div class="editor-container">
+       <div class="tabs-header" id="tabsContainer"></div>
+       <div class="editor-inner">
+           <input type="text" id="fileName" class="input-title" placeholder="Dateiname (z.B. Notiz.txt)" oninput="updateActiveTabTitle()">
+           <textarea id="fileContent" class="textarea-content" placeholder="Schreibe hier deine Notizen..."></textarea>
+           <div class="actions">
+               <span id="infoMsg"></span>
+               <button class="btn btn-danger" onclick="deleteFile()">🗑️ Löschen</button>
+               <button class="btn" onclick="saveFile()">💾 Speichern</button>
+           </div>
+       </div>
+   </div>
+   <script>
+       let tabs = [];
+       let activeTabId = null;
+
+       function renderTabs() {
+           const container = document.getElementById('tabsContainer');
+           container.innerHTML = '';
+           tabs.forEach(t => {
+               const tabEl = document.createElement('div');
+               tabEl.className = 'tab ' + (t.id === activeTabId ? 'active' : '');
+               tabEl.innerHTML = '<span>' + (t.name || 'Unbenannt') + '</span> <span class="tab-close" onclick="closeTab(\'' + t.id + '\', event)">✕</span>';
+               tabEl.onclick = () => switchTab(t.id);
+               container.appendChild(tabEl);
+           });
+       }
+
+       function updateActiveTabTitle() {
+           if(activeTabId) {
+               const activeTab = tabs.find(t => t.id === activeTabId);
+               if(activeTab) activeTab.name = document.getElementById('fileName').value;
+               renderTabs();
+           }
+       }
+
+       function switchTab(id) {
+           saveCurrentTabState();
+           activeTabId = id;
+           const tab = tabs.find(t => t.id === id);
+           if(tab) {
+               document.getElementById('fileName').value = tab.name || '';
+               document.getElementById('fileContent').value = tab.content || '';
+           }
+           renderTabs();
+       }
+
+       function saveCurrentTabState() {
+           if(activeTabId) {
+               const activeTab = tabs.find(t => t.id === activeTabId);
+               if(activeTab) {
+                   activeTab.name = document.getElementById('fileName').value;
+                   activeTab.content = document.getElementById('fileContent').value;
+               }
+           }
+       }
+
+       function closeTab(id, e) {
+           e.stopPropagation();
+           tabs = tabs.filter(t => t.id !== id);
+           if (activeTabId === id) {
+               activeTabId = tabs.length > 0 ? tabs[0].id : null;
+               if(activeTabId) switchTab(activeTabId);
+               else {
+                   document.getElementById('fileName').value = '';
+                   document.getElementById('fileContent').value = '';
+               }
+           }
+           renderTabs();
+       }
+
+       window.addEventListener('message', e => {
+           if(e.data.type === 'themeUpdate') { document.documentElement.style.setProperty('--accent', e.data.theme.accentColor); }
+           if(e.data.type === 'openInNotes') {
+               const existingTab = tabs.find(t => t.id === e.data.file.id);
+               if(existingTab) {
+                   switchTab(existingTab.id);
+               } else {
+                   saveCurrentTabState();
+                   tabs.push({ id: e.data.file.id, name: e.data.file.name, content: e.data.content || '' });
+                   switchTab(e.data.file.id);
+               }
+               document.getElementById('infoMsg').textContent = 'Datei geladen.';
+               setTimeout(() => document.getElementById('infoMsg').textContent='', 2000);
+           }
+       });
+
+       function newFile() { 
+           saveCurrentTabState();
+           const id = Date.now().toString(); 
+           tabs.push({ id: id, name: 'Neue_Notiz.txt', content: '' });
+           switchTab(id);
+           document.getElementById('infoMsg').textContent = ''; 
+       }
+
+       function saveFile() {
+           saveCurrentTabState();
+           let name = document.getElementById('fileName').value.trim();
+           if(!name) name = 'Unbenannt.txt';
+           if(!name.includes('.')) name += '.txt';
+           document.getElementById('fileName').value = name;
+           
+           const activeTab = tabs.find(t => t.id === activeTabId);
+           if(activeTab) activeTab.name = name;
+
+           const content = document.getElementById('fileContent').value;
+           if(activeTabId) {
+               window.parent.postMessage({ type: 'fileSaved', file: { id: activeTabId, name: name, folder: 'desktop' }, filename: name, content: content }, '*');
+               renderTabs();
+               document.getElementById('infoMsg').textContent = 'Gespeichert!'; setTimeout(() => document.getElementById('infoMsg').textContent='', 2000);
+           }
+       }
+
+       function deleteFile() {
+           if(!activeTabId) return;
+           const name = document.getElementById('fileName').value;
+           window.parent.postMessage({ type: 'fileDeleted', fileId: activeTabId, filename: name }, '*');
+           closeTab(activeTabId, {stopPropagation: ()=>{}});
+           if(tabs.length === 0) newFile();
+           document.getElementById('infoMsg').textContent = 'Gelöscht!'; setTimeout(() => document.getElementById('infoMsg').textContent='', 2000);
+       }
+       newFile();
+   </script>
+</body>
+</html>
