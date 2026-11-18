@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#090d18" />
+  <title>Repository HTML Explorer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d18;
+      --panel: rgba(18, 25, 42, .88);
+      --panel-2: #111a2d;
+      --line: rgba(153, 177, 220, .15);
+      --text: #edf3ff;
+      --muted: #8e9db8;
+      --blue: #5b9dff;
+      --blue-2: #2879f4;
+      --green: #45d6a0;
+      --red: #ff7185;
+      --shadow: 0 22px 70px rgba(0,0,0,.32);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 12% 0%, rgba(37, 101, 190, .19), transparent 35%),
+        radial-gradient(ellipse at 90% 20%, rgba(76, 64, 180, .13), transparent 32%),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    .shell { width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 48px 0 70px; }
+    .topline { display: flex; align-items: center; gap: 11px; color: #a9c9ff; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .logo { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(91,157,255,.36); border-radius: 11px; background: rgba(49,119,220,.14); color: #82b5ff; font-size: 18px; }
+    h1 { margin: 20px 0 8px; font-size: clamp(32px, 5vw, 49px); line-height: 1.08; letter-spacing: -.045em; }
+    .subtitle { max-width: 680px; color: var(--muted); font-size: 16px; margin: 0; }
+    .panel { margin-top: 30px; padding: 22px; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(18px); }
+    .form-grid { display: grid; grid-template-columns: minmax(0, 1fr) 190px auto; gap: 12px; align-items: end; }
+    .field label { display: block; margin: 0 0 7px; color: #bdc9dd; font-size: 12px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+    .field input { width: 100%; height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: 11px; outline: none; background: #0a1120; color: var(--text); transition: border-color .2s, box-shadow .2s; }
+    .field input:focus { border-color: rgba(91,157,255,.8); box-shadow: 0 0 0 3px rgba(91,157,255,.12); }
+    .field input::placeholder { color: #61718d; }
+    .btn { height: 46px; padding: 0 17px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid transparent; border-radius: 11px; cursor: pointer; font-weight: 750; white-space: nowrap; transition: transform .18s, background .18s, opacity .18s; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn:disabled { opacity: .42; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, #438ef8, #2869db); color: white; box-shadow: 0 8px 22px rgba(38,112,232,.2); }
+    .btn-secondary { border-color: var(--line); background: #172238; color: #dce8fb; }
+    .btn-download { height: 36px; padding: 0 12px; border-color: rgba(69,214,160,.22); background: rgba(69,214,160,.09); color: #78e4ba; font-size: 13px; }
+    .helper { margin: 12px 0 0; color: #74849f; font-size: 12px; }
+    .status { display: none; margin-top: 16px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: rgba(8,14,25,.65); color: #bac8de; font-size: 13px; }
+    .status.show { display: block; }
+    .status.error { border-color: rgba(255,113,133,.25); color: #ff9aaa; background: rgba(255,113,133,.06); }
+    .status.success { border-color: rgba(69,214,160,.22); color: #7fe3bb; background: rgba(69,214,160,.055); }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 30px 0 14px; }
+    .section-title { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .repo-label { margin-top: 4px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .toolbar-actions { display: flex; gap: 9px; }
+    .search-wrap { position: relative; margin: 15px 0; }
+    .search-wrap input { width: 100%; height: 43px; padding: 0 14px 0 42px; border: 1px solid var(--line); border-radius: 11px; outline: none; background: rgba(10,17,32,.8); color: var(--text); }
+    .search-wrap input:focus { border-color: rgba(91,157,255,.65); }
+    .search-icon { position: absolute; top: 10px; left: 14px; color: #7789a7; font-size: 17px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 12px; }
+    .stat { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: #aab9d1; background: rgba(14,22,38,.65); font-size: 12px; }
+    .stat strong { color: var(--text); }
+    .file-list { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: rgba(10,16,29,.55); }
+    .file-row { display: grid; grid-template-columns: minmax(0, 1fr) 95px 112px; align-items: center; gap: 14px; min-height: 68px; padding: 11px 15px; border-bottom: 1px solid rgba(153,177,220,.09); }
+    .file-row:last-child { border-bottom: 0; }
+    .file-main { min-width: 0; display: flex; align-items: center; gap: 12px; }
+    .file-icon { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(91,157,255,.18); border-radius: 10px; background: rgba(61,127,225,.1); color: #8bbcff; font-size: 12px; font-weight: 850; }
+    .file-name { min-width: 0; }
+    .file-name strong { display: block; overflow: hidden; color: #e5edfb; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .file-name span { display: block; overflow: hidden; margin-top: 2px; color: #7f90ac; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .file-size { color: #8797b1; font-size: 12px; text-align: right; }
+    .empty { padding: 44px 20px; color: #8292ad; text-align: center; }
+    .empty strong { display: block; margin-bottom: 5px; color: #c7d4e8; font-size: 15px; }
+    .footer { margin-top: 20px; color: #667792; font-size: 12px; text-align: center; }
+    .footer a { color: #8ebaff; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 24px, 620px); padding-top: 28px; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid .field:first-child { grid-column: 1 / -1; }
+      .form-grid > button { grid-column: 1 / -1; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions .btn { flex: 1; }
+    }
+    @media (max-width: 480px) {
+      .panel { padding: 15px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .field:first-child, .form-grid > button { grid-column: auto; }
+      .file-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+      .file-size { display: none; }
+      .file-main { gap: 9px; }
+      .btn-download { padding: 0 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topline"><span class="logo">⌘</span> KODA · REPOSITORY TOOLS</div>
+    <h1>HTML-Dateien <span style="color:#77adff">Explorer</span></h1>
+    <p class="subtitle">Finde alle HTML-Dateien in einem GitHub-Repository – auch in Unterordnern. Lade einzelne Dateien oder das komplette HTML-Paket herunter.</p>
+
+    <section class="panel" aria-label="Repository auswählen">
+      <div class="form-grid">
+        <div class="field">
+          <label for="repoInput">GitHub-Repository</label>
+          <input id="repoInput" type="text" placeholder="https://github.com/Benutzer/Repository" autocomplete="url" />
+        </div>
+        <div class="field">
+          <label for="branchInput">Branch (optional)</label>
+          <input id="branchInput" type="text" placeholder="Automatisch" autocomplete="off" />
+        </div>
+        <button class="btn btn-primary" id="loadBtn" type="button"><span>↻</span> Repository laden</button>
+      </div>
+      <p class="helper">Funktioniert mit öffentlichen GitHub-Repositories. Ohne Branch-Angabe wird automatisch der Standard-Branch verwendet.</p>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-label="HTML-Dateien">
+      <div class="toolbar">
+        <div>
+          <h2 class="section-title">Dateien im Repository</h2>
+          <div class="repo-label" id="repoLabel">Noch kein Repository geladen</div>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-secondary" id="refreshBtn" type="button" disabled>↻ Aktualisieren</button>
+          <button class="btn btn-primary" id="zipBtn" type="button" disabled>↓ Alle als ZIP</button>
+        </div>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input id="searchInput" type="search" placeholder="Dateien oder Ordner durchsuchen …" disabled />
+      </div>
+      <div class="stats" id="stats" hidden></div>
+      <div class="file-list" id="fileList">
+        <div class="empty"><strong>Bereit zum Laden</strong>Gib oben ein GitHub-Repository ein, um die HTML-Dateien anzuzeigen.</div>
+      </div>
+    </section>
+
+    <div class="footer">Die Dateiliste wird über die <a href="https://docs.github.com/en/rest/git/trees" target="_blank" rel="noopener">GitHub API</a> geladen. Es wird kein GitHub-Token gespeichert oder benötigt (öffentliche Repositories).</div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const state = { owner: '', repo: '', branch: '', files: [], repoUrl: '' };
+
+      function setStatus(message, type = '') {
+        const el = $('status');
+        el.textContent = message;
+        el.className = 'status show' + (type ? ' ' + type : '');
+      }
+      function clearStatus() {
+        $('status').className = 'status';
+        $('status').textContent = '';
+      }
+      function escapePathPart(value) { return encodeURIComponent(value); }
+      function rawUrl(owner, repo, branch, path) {
+        const encodedBranch = branch.split('/').map(escapePathPart).join('/');
+        const encodedPath = path.split('/').map(escapePathPart).join('/');
+        return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodedBranch}/${encodedPath}`;
+      }
+      function parseRepo(value) {
+        const input = value.trim().replace(/\.git$/i, '').replace(/\/$/, '');
+        if (!input) throw new Error('Bitte gib eine GitHub-Repository-URL oder owner/repo ein.');
+        let match = input.match(/github\.com\/([^/]+)\/([^/?#]+)/i);
+        if (match) return { owner: match[1], repo: match[2].replace(/\.git$/i, '') };
+        match = input.match(/^([^/\s]+)\/([^/\s]+)$/);
+        if (match) return { owner: match[1], repo: match[2] };
+        throw new Error('Repository nicht erkannt. Beispiel: https://github.com/Benutzer/Repository');
+      }
+      function detectCurrentRepo() {
+        const host = location.hostname.toLowerCase();
+        if (!host.endsWith('.github.io')) return null;
+        const owner = host.slice(0, -'.github.io'.length);
+        const parts = location.pathname.split('/').filter(Boolean);
+        const repo = parts.length ? parts[0] : `${owner}.github.io`;
+        if (!owner || !repo) return null;
+        return { owner, repo };
+      }
+      function formatSize(bytes) {
+        if (bytes == null) return '—';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+      function fileName(path) { return path.split('/').pop() || path; }
+
+      async function loadRepository() {
+        const button = $('loadBtn');
+        button.disabled = true;
+        button.textContent = 'Lade …';
+        clearStatus();
+        $('fileList').innerHTML = '<div class="empty"><strong>Repository wird durchsucht …</strong>Die Dateiliste wird von GitHub abgerufen.</div>';
+        $('stats').hidden = true;
+        $('zipBtn').disabled = true;
+        $('refreshBtn').disabled = true;
+        $('searchInput').disabled = true;
+        try {
+          const { owner, repo } = parseRepo($('repoInput').value);
+          const repoApi = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+          const repoResponse = await fetch(repoApi, { headers: { Accept: 'application/vnd.github+json' } });
+          if (!repoResponse.ok) {
+            if (repoResponse.status === 404) throw new Error('Repository nicht gefunden oder nicht öffentlich. Prüfe Benutzername und Repository-Namen.');
+            if (repoResponse.status === 403) throw new Error('GitHub hat das API-Limit erreicht. Bitte später erneut versuchen.');
+            throw new Error(`GitHub-Fehler (${repoResponse.status}).`);
+          }
+          const repoData = await repoResponse.json();
+          const branch = $('branchInput').value.trim() || repoData.default_branch;
+          const treeApi = `${repoApi}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+          const treeResponse = await fetch(treeApi, { headers: { Accept: 'application/vnd.github+json' } });
+          if (!treeResponse.ok) throw new Error(`Branch „${branch}“ konnte nicht geladen werden (${treeResponse.status}).`);
+          const treeData = await treeResponse.json();
+          const files = (treeData.tree || [])
+            .filter(item => item.type === 'blob' && /\.html?$/i.test(item.path))
+            .map(item => ({ path: item.path, size: item.size ?? null, rawUrl: rawUrl(owner, repo, branch, item.path) }))
+            .sort((a, b) => a.path.localeCompare(b.path, 'de', { numeric: true, sensitivity: 'base' }));
+
+          Object.assign(state, { owner, repo, branch, files, repoUrl: repoData.html_url });
+          $('repoLabel').textContent = `${owner}/${repo} · Branch: ${branch}`;
+          $('refreshBtn').disabled = false;
+          $('searchInput').disabled = false;
+          $('searchInput').value = '';
+          $('zipBtn').disabled = files.length === 0;
+          renderFiles();
+          const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
+          const truncatedMessage = treeData.truncated ? ' Hinweis: GitHub hat die Dateiliste wegen der Repository-Größe gekürzt.' : '';
+          setStatus(`${files.length} HTML-Datei${files.length === 1 ? '' : 'en'} gefunden.${truncatedMessage}`, treeData.truncated ? '' : 'success');
+          if (treeData.truncated) setStatus(`${files.length} HTML-Dateien gefunden. GitHub hat den Verzeichnisbaum wegen der Repository-Größe gekürzt; möglicherweise fehlen Dateien.`, '');
+          $('stats').hidden = false;
+          $('stats').replaceChildren();
+          addStat(`${files.length} Dateien`);
+          addStat(`Gesamtgröße: ${formatSize(totalSize)}`);
+          addStat(`Branch: ${branch}`);
+        } catch (error) {
+          $('fileList').innerHTML = `<div class="empty"><strong>Repository konnte nicht geladen werden</strong>${escapeHtml(error.message)}</div>`;
+          setStatus(error.message, 'error');
+          $('repoLabel').textContent = 'Kein Repository geladen';
+          state.files = [];
+        } finally {
+          button.disabled = false;
+          button.innerHTML = '<span>↻</span> Repository laden';
+          $('zipBtn').disabled = state.files.length === 0;
+        }
+      }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+      }
+      function addStat(label) {
+        const span = document.createElement('span');
+        span.className = 'stat';
+        span.textContent = label;
+        $('stats').appendChild(span);
+      }
+      function renderFiles() {
+        const query = $('searchInput').value.trim().toLocaleLowerCase('de');
+        const files = state.files.filter(file => file.path.toLocaleLowerCase('de').includes(query));
+        const list = $('fileList');
+        list.replaceChildren();
+        if (!files.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.innerHTML = '<strong>Keine passenden Dateien</strong>Ändere deinen Suchbegriff oder lade ein anderes Repository.';
+          list.appendChild(empty);
+          return;
+        }
+        for (const file of files) {
+          const row = document.createElement('div');
+          row.className = 'file-row';
+          const main = document.createElement('div');
+          main.className = 'file-main';
+          const icon = document.createElement('div');
+          icon.className = 'file-icon';
+          icon.textContent = 'HTML';
+          const name = document.createElement('div');
+          name.className = 'file-name';
+          const strong = document.createElement('strong');
+          strong.textContent = fileName(file.path);
+          strong.title = file.path;
+          const path = document.createElement('span');
+          path.textContent = file.path;
+          path.title = file.path;
+          name.append(strong, path);
+          main.append(icon, name);
+          const size = document.createElement('div');
+          size.className = 'file-size';
+          size.textContent = formatSize(file.size);
+          const download = document.createElement('button');
+          download.className = 'btn btn-download';
+          download.type = 'button';
+          download.textContent = '↓ Download';
+          download.addEventListener('click', () => downloadOne(file, download));
+          row.append(main, size, download);
+          list.appendChild(row);
+        }
+      }
+      async function downloadOne(file, button) {
+        const oldText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Lade …';
+        try {
+          const response = await fetch(file.rawUrl);
+          if (!response.ok) throw new Error(`Download fehlgeschlagen (${response.status}).`);
+          const blob = await response.blob();
+          downloadBlob(blob, fileName(file.path));
+        } catch (error) {
+          setStatus(`„${file.path}“ konnte nicht heruntergeladen werden: ${error.message}`, 'error');
+        } finally {
+          button.disabled = false;
+          button.textContent = oldText;
+        }
+      }
+      async function downloadZip() {
+        if (!state.files.length) return;
+        if (typeof JSZip === 'undefined') {
+          setStatus('Die ZIP-Bibliothek konnte nicht geladen werden. Prüfe deine Internetverbindung und lade die Seite neu.', 'error');
+          return;
+        }
+        const button = $('zipBtn');
+        button.disabled = true;
+        const zip = new JSZip();
+        let completed = 0;
+        setStatus(`ZIP wird erstellt: 0 von ${state.files.length} Dateien geladen …`);
+        try {
+          let index = 0;
+          const workers = Array.from({ length: Math.min(5, state.files.length) }, async () => {
+            while (index < state.files.length) {
+              const file = state.files[index++];
+              const response = await fetch(file.rawUrl);
+              if (!response.ok) throw new Error(`Download von ${file.path} fehlgeschlagen (${response.status}).`);
+              const blob = await response.blob();
+              zip.file(file.path, blob);
+              completed++;
+              setStatus(`ZIP wird erstellt: ${completed} von ${state.files.length} Dateien geladen …`);
+            }
+          });
+          await Promise.all(workers);
+          const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } }, metadata => {
+            setStatus(`ZIP wird gepackt: ${Math.round(metadata.percent)} % …`);
+          });
+          downloadBlob(blob, `${state.repo}-html-dateien.zip`);
+          setStatus(`Fertig! ${state.files.length} HTML-Dateien wurden in eine ZIP-Datei gepackt.`, 'success');
+        } catch (error) {
+          setStatus(`ZIP konnte nicht erstellt werden: ${error.message}`, 'error');
+        } finally {
+          button.disabled = false;
+          button.textContent = '↓ Alle als ZIP';
+        }
+      }
+
+      $('loadBtn').addEventListener('click', loadRepository);
+      $('refreshBtn').addEventListener('click', loadRepository);
+      $('zipBtn').addEventListener('click', downloadZip);
+      $('searchInput').addEventListener('input', renderFiles);
+      $('repoInput').addEventListener('keydown', event => { if (event.key === 'Enter') loadRepository(); });
+      $('branchInput').addEventListener('keydown', event => { if (event.key === 'Enter') loadRepository(); });
+
+      const detected = detectCurrentRepo();
+      if (detected) {
+        $('repoInput').value = `https://github.com/${detected.owner}/${detected.repo}`;
+        loadRepository();
+      }
+    })();
+  </script>
+</body>
+</html>
