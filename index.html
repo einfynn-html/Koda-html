@@ -259,7 +259,7 @@
     }
 
 
-    /* Monochrome, hard-edge visual system */
+    /* Monochrome base with one restrained amber accent */
     :root {
       --bg: #050505;
       --surface: #0d0d0d;
@@ -267,10 +267,10 @@
       --border: #292929;
       --text: #f5f5f5;
       --muted: #929292;
-      --accent: #e8e8e8;
-      --accent-bg: #151515;
-      --danger: #d0d0d0;
-      --success: #d0d0d0;
+      --accent: #f59e01;
+      --accent-bg: #211707;
+      --danger: #f59e01;
+      --success: #f59e01;
       --radius: 0;
     }
 
@@ -281,9 +281,9 @@
 
     body { background: #050505; color: #f5f5f5; }
     .brand-mark {
-      border-color: #383838;
-      background: #101010;
-      color: #f5f5f5;
+      border-color: rgba(245, 158, 1, .38);
+      background: #171006;
+      color: var(--accent);
     }
     .repo-panel, .file-list { background: #0d0d0d; border-color: #292929; }
     .repo-input, .search-input, .branch-input {
@@ -292,9 +292,9 @@
       color: #f5f5f5;
     }
     .repo-input:focus, .search-input:focus, .branch-input:focus {
-      border-color: #f0f0f0;
+      border-color: var(--accent);
       background: #080808;
-      box-shadow: 0 0 0 1px #f0f0f0 !important;
+      box-shadow: 0 0 0 1px var(--accent) !important;
     }
     .button {
       border-color: #353535;
@@ -307,26 +307,28 @@
     }
     .button-primary,
     .button-primary:hover:not(:disabled) {
-      border-color: #f2f2f2;
-      background: #f2f2f2;
-      color: #050505;
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #080808;
     }
+    .button-primary:hover:not(:disabled) { background: #ffb52e; }
     .file-type {
-      border-color: #3a3a3a;
-      background: #151515;
-      color: #e5e5e5;
+      border-color: rgba(245, 158, 1, .35);
+      background: #171006;
+      color: var(--accent);
     }
     .file-row { border-color: #242424; }
     .file-row:hover { background: #171717; }
     .status { border-color: #303030; background: #101010; color: #d0d0d0; }
     .status.error, .status.success {
-      border-color: #454545;
-      background: #111;
-      color: #e0e0e0;
+      border-color: rgba(245, 158, 1, .35);
+      background: #171006;
+      color: var(--accent);
     }
-    .footer a { color: #d8d8d8; }
+    .footer a { color: var(--accent); }
+    .footer a:hover { color: #ffbd45; }
     .repo-input::placeholder, .search-input::placeholder, .branch-input::placeholder { color: #777; }
-    ::selection { background: #e5e5e5; color: #050505; }
+    ::selection { background: var(--accent); color: #050505; }
 
   </style>
 </head>
