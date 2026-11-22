@@ -330,14 +330,143 @@
     .repo-input::placeholder, .search-input::placeholder, .branch-input::placeholder { color: #777; }
     ::selection { background: var(--accent); color: #050505; }
 
+    /* Settings system: square, restrained, monochrome with editable accent + alpha. */
+    html { min-height: 100%; background: #000; }
+    :root {
+      --bg: rgba(5,5,5,1);
+      --surface: rgba(13,13,13,1);
+      --surface-hover: rgba(23,23,23,1);
+      --border: rgba(41,41,41,1);
+      --text: rgba(245,245,245,1);
+      --muted: rgba(146,146,146,1);
+      --accent: rgba(245,158,1,1);
+      --accent-bg: rgba(33,23,7,1);
+    }
+    /* Grid als eigentlicher Seitenhintergrund; Kacheln liegen transparent darüber. */
+    html { min-height:100%; background:#050505; }
+    body {
+      background-color: var(--bg) !important;
+      background-image:
+        linear-gradient(rgba(255,255,255,.075) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.075) 1px, transparent 1px) !important;
+      background-size: 32px 32px !important;
+      background-attachment: fixed !important;
+      color: var(--text) !important;
+    }
+    .repo-panel, .file-list {
+      background: var(--surface) !important;
+      border-color: var(--border) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(115%);
+      backdrop-filter: blur(16px) saturate(115%);
+    }
+    .file-row { border-color: var(--border) !important; }
+    .file-row:hover { background: var(--surface-hover) !important; }
+    .repo-input, .search-input, .branch-input, .status,
+    .modal-panel, .preview-panel, .launch-card, .app-modal-actions {
+      -webkit-backdrop-filter: blur(14px) saturate(115%);
+      backdrop-filter: blur(14px) saturate(115%);
+    }
+    .repo-input, .search-input, .branch-input { background: var(--surface) !important; }
+    .modal-panel, .preview-panel { background: var(--surface) !important; }
+    .launch-card { background: var(--surface) !important; }
+    .brand-mark, .file-type { border-color: var(--border) !important; background: var(--accent-bg) !important; color: var(--accent) !important; }
+    .button-primary, .button-primary:hover:not(:disabled) { border-color: var(--accent) !important; background: var(--accent) !important; color: #050505 !important; }
+    .button-primary:hover:not(:disabled) { filter: brightness(1.12); }
+    .button:focus-visible, input:focus-visible, textarea:focus-visible, .tab-button:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+    .header-settings { margin-top:2px; min-height:34px; font-size:12px; }
+    .modal { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; padding:22px; }
+    .modal.open { display:flex; }
+    .modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.82); }
+    .modal-panel, .preview-panel { position:relative; z-index:1; width:min(760px,100%); max-height:min(88vh,900px); overflow:auto; border:1px solid #414141; background:#090909; color:#f5f5f5; }
+    .theme-panel { width:min(690px,100%); }
+    .app-panel { width:min(820px,100%); }
+    .modal-head, .preview-head { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; padding:22px 24px 16px; border-bottom:1px solid #292929; }
+    .modal-head h2, .preview-head h2 { margin:4px 0 0; font-size:21px; letter-spacing:-.04em; font-weight:650; }
+    .eyebrow { color:#8d8d8d; font-size:10px; font-weight:700; letter-spacing:.14em; }
+    .modal-description, .section-note { color:#999; font-size:12px; line-height:1.6; }
+    .modal-description { margin:0; padding:14px 24px 4px; }
+    .modal-subtitle { max-width:620px; margin-top:4px; color:#777; font-size:11px; overflow-wrap:anywhere; }
+    .icon-button { width:32px; height:32px; flex:0 0 32px; border:1px solid #343434; background:#111; color:#eee; font-size:22px; line-height:1; cursor:pointer; }
+    .icon-button:hover { background:#202020; border-color:#666; }
+    .color-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 22px; padding:12px 24px 20px; }
+    .color-control { min-width:0; padding:13px 0; border-bottom:1px solid #242424; }
+    .color-control-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+    .color-control-head label { color:#ddd; font-size:12px; font-weight:600; }
+    .color-control-head code { color:#777; font-size:10px; }
+    .color-control-tools { display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center; gap:12px; }
+    .color-control input[type=color] { width:44px; height:31px; padding:2px; border:1px solid #444; border-radius:0; background:#111; cursor:pointer; }
+    .alpha-wrap { min-width:0; display:grid; grid-template-columns:minmax(0,1fr) 42px; align-items:center; gap:9px; }
+    .alpha-wrap input[type=range] { width:100%; accent-color:var(--accent); }
+    .alpha-value { color:#aaa; font-size:11px; text-align:right; font-variant-numeric:tabular-nums; }
+    .modal-actions { display:flex; align-items:center; gap:8px; padding:15px 24px 20px; border-top:1px solid #292929; }
+    .action-spacer { flex:1; }
+    .tab-bar { display:flex; gap:0; padding:0 24px; border-bottom:1px solid #292929; overflow-x:auto; }
+    .tab-button { min-height:44px; padding:0 14px; border:0; border-bottom:2px solid transparent; background:transparent; color:#888; font-size:12px; cursor:pointer; white-space:nowrap; }
+    .tab-button:hover { color:#ddd; }
+    .tab-button.active { border-bottom-color:var(--accent); color:#f5f5f5; }
+    .app-tab-content { padding:20px 24px 24px; }
+    .app-tab-content[hidden] { display:none; }
+    .form-grid { display:grid; gap:14px; }
+    .two-col { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .field-full { grid-column:1/-1; }
+    .setting-field { display:flex; min-width:0; flex-direction:column; gap:7px; color:#aaa; font-size:11px; }
+    .setting-field input, .setting-field textarea { width:100%; min-width:0; border:1px solid #373737; border-radius:0; outline:none; padding:10px 11px; background:#050505; color:#eee; font:inherit; font-size:13px; resize:vertical; }
+    .setting-field input { height:38px; }
+    .setting-field input:focus, .setting-field textarea:focus { border-color:var(--accent); }
+    .check-setting { display:flex; align-items:flex-start; gap:11px; margin-top:19px; padding-top:16px; border-top:1px solid #292929; cursor:pointer; }
+    .check-setting input { margin:2px 0 0; accent-color:var(--accent); }
+    .check-setting strong, .check-setting small { display:block; }
+    .check-setting strong { color:#ddd; font-size:12px; font-weight:600; }
+    .check-setting small { margin-top:3px; color:#777; font-size:11px; }
+    .app-modal-actions { position:sticky; bottom:0; background:#090909; }
+    .code-textarea { min-height:220px; color:#e2e2e2 !important; font-family:ui-monospace,SFMono-Regular,Consolas,monospace !important; font-size:12px !important; line-height:1.55; tab-size:2; }
+    .advanced-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:9px; }
+    .launch-card { display:flex; align-items:center; gap:13px; padding:14px; border:1px solid #303030; background:#101010; }
+    .launch-symbol { display:grid; width:42px; height:42px; flex:0 0 42px; place-items:center; border:1px solid var(--accent); color:var(--accent); background:var(--accent-bg); font-size:16px; }
+    .launch-copy { display:flex; min-width:0; flex-direction:column; gap:3px; }
+    .launch-copy strong { color:#eee; font-size:13px; }
+    .launch-copy span { color:#888; font-size:11px; }
+    .launch-actions { display:flex; flex-wrap:wrap; gap:8px; margin:15px 0; }
+    .preview-modal { z-index:1100; padding:12px; }
+    .preview-panel { display:flex; flex-direction:column; width:min(1400px,100%); height:min(94vh,1000px); max-height:94vh; overflow:hidden; }
+    .preview-head { flex:0 0 auto; padding:12px 16px; }
+    .preview-head h2 { font-size:15px; }
+    .preview-frame-wrap { flex:1; min-height:0; background:#fff; }
+    .preview-frame-wrap iframe { display:block; width:100%; height:100%; border:0; background:#fff; }
+    .file-row { cursor:pointer; }
+    .file-row:focus-visible { outline:1px solid var(--accent); outline-offset:-2px; }
+    .file-actions { gap:7px; }
+    .file-settings-button { min-height:30px; padding:0 9px; }
+    @media (max-width:650px) {
+      .page-header { flex-direction:column; }
+      .header-settings { margin:0; }
+      .color-grid { grid-template-columns:1fr; padding-left:16px; padding-right:16px; }
+      .modal { padding:8px; }
+      .modal-head { padding:17px 16px 13px; }
+      .modal-description { padding:12px 16px 2px; }
+      .app-tab-content { padding:16px; }
+      .tab-bar { padding:0 8px; }
+      .modal-actions { padding:12px 16px 16px; flex-wrap:wrap; }
+      .two-col { grid-template-columns:1fr; }
+      .field-full { grid-column:auto; }
+      .app-modal-actions { position:static; }
+      .launch-actions { flex-direction:column; }
+      .launch-actions .button { width:100%; }
+    }
+
   </style>
 </head>
 <body>
   <main class="page">
-    <header>
-      <div class="brand"><span class="brand-mark">K</span> Koda · Library</div>
-      <h1>HTML-Dateien</h1>
-      <p class="intro">Alle HTML-Dateien aus deinem Repository an einem Ort.</p>
+    <header class="page-header">
+      <div class="header-copy">
+        <div class="brand"><span class="brand-mark">K</span> Koda · Library</div>
+        <h1>HTML-Dateien</h1>
+        <p class="intro">Alle HTML-Dateien aus deinem Repository an einem Ort.</p>
+      </div>
+      <button class="button header-settings" id="openThemeBtn" type="button" aria-haspopup="dialog">Darstellung einstellen</button>
     </header>
 
     <section class="repo-panel" aria-label="Repository auswählen">
@@ -390,6 +519,90 @@
     </footer>
   </main>
 
+  <div class="modal" id="themeModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="themeModal"></div>
+    <section class="modal-panel theme-panel" role="dialog" aria-modal="true" aria-labelledby="themeTitle">
+      <div class="modal-head">
+        <div><div class="eyebrow">GLOBALE DARSTELLUNG</div><h2 id="themeTitle">Farben & Transparenz</h2></div>
+        <button class="icon-button" type="button" data-close-modal="themeModal" aria-label="Schließen">×</button>
+      </div>
+      <p class="modal-description">Passe jede Grundfarbe und ihre Deckkraft separat an. Änderungen werden direkt als Vorschau angezeigt.</p>
+      <div class="color-grid" id="globalColorFields"></div>
+      <div class="modal-actions">
+        <button class="button" id="resetThemeBtn" type="button">Zurücksetzen</button>
+        <span class="action-spacer"></span>
+        <button class="button" type="button" data-close-modal="themeModal">Abbrechen</button>
+        <button class="button button-primary" id="saveThemeBtn" type="button">Übernehmen</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="appModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="appModal"></div>
+    <section class="modal-panel app-panel" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+      <div class="modal-head">
+        <div class="app-modal-title-wrap"><div class="eyebrow">APP-EINSTELLUNGEN</div><h2 id="appModalTitle">App anpassen</h2><div class="modal-subtitle" id="appModalPath"></div></div>
+        <button class="icon-button" type="button" data-close-modal="appModal" aria-label="Schließen">×</button>
+      </div>
+      <nav class="tab-bar" aria-label="App-Einstellungsbereiche">
+        <button class="tab-button active" type="button" data-app-tab="general">Allgemein</button>
+        <button class="tab-button" type="button" data-app-tab="appearance">Darstellung</button>
+        <button class="tab-button" type="button" data-app-tab="advanced">Erweitert</button>
+        <button class="tab-button" type="button" data-app-tab="launch">Starten</button>
+      </nav>
+
+      <div class="app-tab-content" data-tab-panel="general">
+        <div class="form-grid two-col">
+          <label class="setting-field"><span>Anzeigename</span><input id="appName" type="text" maxlength="80" placeholder="Name der App"></label>
+          <label class="setting-field"><span>Symbol / Emoji</span><input id="appIcon" type="text" maxlength="8" placeholder="HTML"></label>
+          <label class="setting-field"><span>Kategorie</span><input id="appCategory" type="text" maxlength="50" placeholder="z. B. Produktivität"></label>
+          <label class="setting-field"><span>Version</span><input id="appVersion" type="text" maxlength="30" placeholder="z. B. 1.0.0"></label>
+          <label class="setting-field field-full"><span>Beschreibung</span><textarea id="appDescription" rows="3" maxlength="240" placeholder="Kurze Beschreibung der App"></textarea></label>
+        </div>
+        <label class="check-setting"><input id="appVisible" type="checkbox"><span><strong>In der Dateiliste anzeigen</strong><small>Ausgeblendete Apps bleiben gespeichert und können später wieder eingeblendet werden.</small></span></label>
+      </div>
+
+      <div class="app-tab-content" data-tab-panel="appearance" hidden>
+        <p class="section-note">Diese Farben gelten für den ausgewählten App-Eintrag und werden beim Start auch als CSS-Variablen in die Vorschau übertragen.</p>
+        <div class="color-grid" id="appColorFields"></div>
+      </div>
+
+      <div class="app-tab-content" data-tab-panel="advanced" hidden>
+        <label class="setting-field"><span>Eigene CSS-Anpassungen</span><textarea id="appCustomCss" class="code-textarea" rows="12" spellcheck="false" placeholder="/* Beispiel: */\nbutton { border-radius: 0 !important; }\nbody { letter-spacing: .02em; }"></textarea></label>
+        <p class="section-note">Dein CSS wird nur für die Vorschau bzw. den Start aus diesem Editor hinzugefügt. Die Originaldatei im GitHub-Repository wird nicht verändert.</p>
+        <div class="advanced-actions"><button class="button button-small" id="clearAppCssBtn" type="button">CSS leeren</button><button class="button button-small" id="copyAppCssBtn" type="button">CSS kopieren</button></div>
+      </div>
+
+      <div class="app-tab-content" data-tab-panel="launch" hidden>
+        <div class="launch-card">
+          <div class="launch-symbol" id="launchIcon">HTML</div>
+          <div class="launch-copy"><strong id="launchName">App</strong><span id="launchDescription">Vorschau mit deinen gespeicherten Anpassungen starten.</span></div>
+        </div>
+        <div class="launch-actions">
+          <button class="button button-primary" id="previewAppBtn" type="button">Vorschau öffnen</button>
+          <button class="button" id="openAppTabBtn" type="button">In neuem Tab öffnen</button>
+          <button class="button" id="downloadAppBtn" type="button">Original herunterladen</button>
+        </div>
+        <p class="section-note">Die Vorschau lädt die HTML-Datei aus GitHub in einer isolierten Ansicht. Externe Dateien wie Bilder und Stylesheets werden über den Originalpfad geladen. Die Originaldatei bleibt unverändert.</p>
+      </div>
+
+      <div class="modal-actions app-modal-actions">
+        <button class="button" id="resetAppBtn" type="button">App zurücksetzen</button>
+        <span class="action-spacer"></span>
+        <button class="button" type="button" data-close-modal="appModal">Abbrechen</button>
+        <button class="button button-primary" id="saveAppBtn" type="button">Einstellungen speichern</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal preview-modal" id="previewModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="previewModal"></div>
+    <section class="preview-panel" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+      <div class="preview-head"><div><div class="eyebrow">APP-VORSCHAU</div><h2 id="previewTitle">Vorschau</h2></div><button class="icon-button" type="button" data-close-modal="previewModal" aria-label="Vorschau schließen">×</button></div>
+      <div class="preview-frame-wrap"><iframe id="appPreviewFrame" title="App-Vorschau" sandbox="allow-scripts allow-forms allow-modals allow-downloads"></iframe></div>
+    </section>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
   <script>
     (() => {
@@ -397,6 +610,315 @@
 
       const $ = (id) => document.getElementById(id);
       const state = { owner: '', repo: '', branch: '', files: [] };
+      const THEME_STORAGE_KEY = 'koda-html-library-theme-v2';
+      const APP_STORAGE_KEY = 'koda-html-library-apps-v2';
+      const defaultTheme = {
+        bg: { label: 'Seitenhintergrund', color: '#050505', alpha: 100 },
+        surface: { label: 'Flächen / Panels', color: '#0d0d0d', alpha: 100 },
+        surfaceHover: { label: 'Hover-Flächen', color: '#171717', alpha: 100 },
+        border: { label: 'Rahmen / Trennlinien', color: '#292929', alpha: 100 },
+        text: { label: 'Haupttext', color: '#f5f5f5', alpha: 100 },
+        muted: { label: 'Sekundärtext', color: '#929292', alpha: 100 },
+        accent: { label: 'Akzentfarbe', color: '#f59e01', alpha: 100 },
+        accentBg: { label: 'Akzent-Hintergrund', color: '#211707', alpha: 100 }
+      };
+      let globalTheme = loadObject(THEME_STORAGE_KEY, defaultTheme);
+      let themeDraft = null;
+      let appSettings = loadObject(APP_STORAGE_KEY, {});
+      let activeFile = null;
+      let appDraft = null;
+      let previewObjectUrl = null;
+
+      function clone(value) { return JSON.parse(JSON.stringify(value)); }
+      function loadObject(key, fallback) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+          return parsed && typeof parsed === 'object' ? parsed : clone(fallback);
+        } catch (_) { return clone(fallback); }
+      }
+      function saveObject(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); }
+        catch (_) { setStatus('Einstellungen konnten nicht gespeichert werden. Prüfe, ob der Browser lokale Speicherung erlaubt.', 'error'); }
+      }
+      function normalizeTheme(theme) {
+        const normalized = clone(defaultTheme);
+        for (const key of Object.keys(normalized)) {
+          const value = theme && theme[key];
+          if (value && /^#[0-9a-f]{6}$/i.test(value.color || '')) normalized[key].color = value.color;
+          if (value && Number.isFinite(Number(value.alpha))) normalized[key].alpha = Math.max(0, Math.min(100, Number(value.alpha)));
+        }
+        return normalized;
+      }
+      function toRgba(color, alpha) {
+        const hex = String(color || '#000000').replace('#', '');
+        const valid = /^[0-9a-f]{6}$/i.test(hex) ? hex : '000000';
+        const r = parseInt(valid.slice(0, 2), 16);
+        const g = parseInt(valid.slice(2, 4), 16);
+        const b = parseInt(valid.slice(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${(Math.max(0, Math.min(100, Number(alpha))) / 100).toFixed(2)})`;
+      }
+      function applyTheme(theme) {
+        const clean = normalizeTheme(theme);
+        for (const key of Object.keys(clean)) {
+          document.documentElement.style.setProperty(`--${key === 'surfaceHover' ? 'surface-hover' : key === 'accentBg' ? 'accent-bg' : key}`, toRgba(clean[key].color, clean[key].alpha));
+        }
+      }
+      globalTheme = normalizeTheme(globalTheme);
+      applyTheme(globalTheme);
+
+      function renderColorControls(container, model, onChange) {
+        container.replaceChildren();
+        for (const [key, meta] of Object.entries(model)) {
+          const row = document.createElement('div');
+          row.className = 'color-control';
+          const head = document.createElement('div');
+          head.className = 'color-control-head';
+          const label = document.createElement('label');
+          label.textContent = meta.label || key;
+          const hex = document.createElement('code');
+          hex.textContent = meta.color.toUpperCase();
+          head.append(label, hex);
+          const tools = document.createElement('div');
+          tools.className = 'color-control-tools';
+          const picker = document.createElement('input');
+          picker.type = 'color'; picker.value = meta.color; picker.setAttribute('aria-label', `${meta.label} auswählen`);
+          const alphaWrap = document.createElement('div');
+          alphaWrap.className = 'alpha-wrap';
+          const range = document.createElement('input');
+          range.type = 'range'; range.min = '0'; range.max = '100'; range.step = '1'; range.value = String(meta.alpha);
+          range.setAttribute('aria-label', `Transparenz ${meta.label}`);
+          const value = document.createElement('span');
+          value.className = 'alpha-value'; value.textContent = `${meta.alpha}%`;
+          picker.addEventListener('input', () => {
+            model[key].color = picker.value;
+            hex.textContent = picker.value.toUpperCase();
+            onChange(model);
+          });
+          range.addEventListener('input', () => {
+            model[key].alpha = Number(range.value);
+            value.textContent = `${range.value}%`;
+            onChange(model);
+          });
+          alphaWrap.append(range, value);
+          tools.append(picker, alphaWrap);
+          row.append(head, tools);
+          container.appendChild(row);
+        }
+      }
+      function openModal(id) {
+        const modal = $(id);
+        modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal(id) {
+        const modal = $(id);
+        modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
+        if (!document.querySelector('.modal.open')) document.body.style.overflow = '';
+      }
+      document.querySelectorAll('[data-close-modal]').forEach(button => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-close-modal');
+          if (id === 'themeModal' && themeDraft) { applyTheme(globalTheme); themeDraft = null; }
+          if (id === 'appModal') appDraft = null;
+          if (id === 'previewModal') { $('appPreviewFrame').src = 'about:blank'; if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; } }
+          closeModal(id);
+        });
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          for (const id of ['previewModal', 'appModal', 'themeModal']) {
+            if ($(id).classList.contains('open')) {
+              if (id === 'themeModal' && themeDraft) { applyTheme(globalTheme); themeDraft = null; }
+              if (id === 'appModal') appDraft = null;
+              if (id === 'previewModal') { $('appPreviewFrame').src = 'about:blank'; if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; } }
+              closeModal(id); break;
+            }
+          }
+        }
+      });
+
+      function openThemeEditor() {
+        themeDraft = clone(globalTheme);
+        renderColorControls($('globalColorFields'), themeDraft, draft => applyTheme(draft));
+        openModal('themeModal');
+      }
+      $('openThemeBtn').addEventListener('click', openThemeEditor);
+      $('saveThemeBtn').addEventListener('click', () => {
+        globalTheme = normalizeTheme(themeDraft || globalTheme);
+        saveObject(THEME_STORAGE_KEY, globalTheme);
+        applyTheme(globalTheme); themeDraft = null; closeModal('themeModal');
+      });
+      $('resetThemeBtn').addEventListener('click', () => {
+        themeDraft = clone(defaultTheme);
+        renderColorControls($('globalColorFields'), themeDraft, draft => applyTheme(draft));
+        applyTheme(themeDraft);
+      });
+
+      function appKey(file) { return `${state.owner}/${state.repo}@${state.branch}:${file.path}`; }
+      function defaultAppSettings(file) {
+        return {
+          name: fileName(file.path), icon: 'HTML', category: 'HTML', version: '', description: '', visible: true,
+          colors: clone(globalTheme), customCss: ''
+        };
+      }
+      function getAppSettings(file) {
+        const saved = appSettings[appKey(file)];
+        if (!saved) return defaultAppSettings(file);
+        const base = defaultAppSettings(file);
+        return { ...base, ...saved, colors: normalizeTheme(saved.colors || base.colors) };
+      }
+      function updateAppModalPreviewText() {
+        if (!appDraft) return;
+        $('launchIcon').textContent = appDraft.icon || 'HTML';
+        $('launchName').textContent = appDraft.name || fileName(activeFile.path);
+        $('launchDescription').textContent = appDraft.description || activeFile.path;
+      }
+      function setAppTab(tab) {
+        document.querySelectorAll('[data-app-tab]').forEach(button => button.classList.toggle('active', button.dataset.appTab === tab));
+        document.querySelectorAll('[data-tab-panel]').forEach(panel => { panel.hidden = panel.dataset.tabPanel !== tab; });
+      }
+      document.querySelectorAll('[data-app-tab]').forEach(button => button.addEventListener('click', () => setAppTab(button.dataset.appTab)));
+      function openAppEditor(file) {
+        activeFile = file;
+        appDraft = getAppSettings(file);
+        $('appModalTitle').textContent = appDraft.name || fileName(file.path);
+        $('appModalPath').textContent = file.path;
+        $('appName').value = appDraft.name;
+        $('appIcon').value = appDraft.icon;
+        $('appCategory').value = appDraft.category;
+        $('appVersion').value = appDraft.version;
+        $('appDescription').value = appDraft.description;
+        $('appVisible').checked = !!appDraft.visible;
+        $('appCustomCss').value = appDraft.customCss || '';
+        renderColorControls($('appColorFields'), appDraft.colors, () => {});
+        $('appColorFields').querySelectorAll('.color-control').forEach((row, index) => {
+          const key = Object.keys(appDraft.colors)[index];
+          const picker = row.querySelector('input[type="color"]');
+          const range = row.querySelector('input[type="range"]');
+          const value = row.querySelector('.alpha-value');
+          picker.addEventListener('input', () => { appDraft.colors[key].color = picker.value; row.querySelector('code').textContent = picker.value.toUpperCase(); });
+          range.addEventListener('input', () => { appDraft.colors[key].alpha = Number(range.value); value.textContent = `${range.value}%`; });
+        });
+        updateAppModalPreviewText();
+        setAppTab('general');
+        openModal('appModal');
+      }
+      function syncAppDraftFromFields() {
+        if (!appDraft) return;
+        appDraft.name = $('appName').value.trim() || fileName(activeFile.path);
+        appDraft.icon = $('appIcon').value.trim() || 'HTML';
+        appDraft.category = $('appCategory').value.trim();
+        appDraft.version = $('appVersion').value.trim();
+        appDraft.description = $('appDescription').value.trim();
+        appDraft.visible = $('appVisible').checked;
+        appDraft.customCss = $('appCustomCss').value;
+        updateAppModalPreviewText();
+      }
+      ['appName','appIcon','appCategory','appVersion','appDescription','appVisible','appCustomCss'].forEach(id => {
+        $(id).addEventListener('input', syncAppDraftFromFields);
+        $(id).addEventListener('change', syncAppDraftFromFields);
+      });
+      $('saveAppBtn').addEventListener('click', () => {
+        if (!activeFile || !appDraft) return;
+        syncAppDraftFromFields();
+        appSettings[appKey(activeFile)] = clone(appDraft);
+        saveObject(APP_STORAGE_KEY, appSettings);
+        const file = activeFile;
+        renderFiles();
+        $('appModalTitle').textContent = appDraft.name || fileName(file.path);
+        closeModal('appModal'); appDraft = null;
+        setStatus(`Einstellungen für „${fileName(file.path)}“ gespeichert.`, 'success');
+      });
+      $('resetAppBtn').addEventListener('click', () => {
+        if (!activeFile) return;
+        appDraft = defaultAppSettings(activeFile);
+        $('appName').value = appDraft.name; $('appIcon').value = appDraft.icon;
+        $('appCategory').value = appDraft.category; $('appVersion').value = '';
+        $('appDescription').value = ''; $('appVisible').checked = true; $('appCustomCss').value = '';
+        renderColorControls($('appColorFields'), appDraft.colors, () => {});
+        $('appColorFields').querySelectorAll('.color-control').forEach((row, index) => {
+          const key = Object.keys(appDraft.colors)[index];
+          row.querySelector('input[type="color"]').addEventListener('input', e => { appDraft.colors[key].color = e.target.value; row.querySelector('code').textContent = e.target.value.toUpperCase(); });
+          row.querySelector('input[type="range"]').addEventListener('input', e => { appDraft.colors[key].alpha = Number(e.target.value); row.querySelector('.alpha-value').textContent = `${e.target.value}%`; });
+        });
+        updateAppModalPreviewText();
+      });
+      $('clearAppCssBtn').addEventListener('click', () => { $('appCustomCss').value = ''; syncAppDraftFromFields(); });
+      $('copyAppCssBtn').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText($('appCustomCss').value); setStatus('CSS wurde kopiert.', 'success'); }
+        catch (_) { $('appCustomCss').focus(); $('appCustomCss').select(); setStatus('CSS markieren und mit Strg+C kopieren.', ''); }
+      });
+
+      function buildAppOverrideCss(settings) {
+        const c = normalizeTheme(settings.colors || globalTheme);
+        const vars = {
+          '--koda-bg': toRgba(c.bg.color, c.bg.alpha), '--koda-surface': toRgba(c.surface.color, c.surface.alpha),
+          '--koda-surface-hover': toRgba(c.surfaceHover.color, c.surfaceHover.alpha), '--koda-border': toRgba(c.border.color, c.border.alpha),
+          '--koda-text': toRgba(c.text.color, c.text.alpha), '--koda-muted': toRgba(c.muted.color, c.muted.alpha),
+          '--koda-accent': toRgba(c.accent.color, c.accent.alpha), '--koda-accent-bg': toRgba(c.accentBg.color, c.accentBg.alpha)
+        };
+        const genericVars = {
+          '--bg': vars['--koda-bg'], '--surface': vars['--koda-surface'], '--surface-hover': vars['--koda-surface-hover'],
+          '--border': vars['--koda-border'], '--text': vars['--koda-text'], '--muted': vars['--koda-muted'],
+          '--accent': vars['--koda-accent'], '--accent-bg': vars['--koda-accent-bg']
+        };
+        const declarations = Object.entries({ ...vars, ...genericVars }).map(([key, value]) => `${key}:${value}`).join(';');
+        const custom = String(settings.customCss || '').replace(/<\/style/gi, '<\\/style');
+        return `:root{${declarations};accent-color:var(--koda-accent)!important;color-scheme:dark;}\n` +
+          `html,body{background-color:var(--koda-bg)!important;color:var(--koda-text)!important;}\n` +
+          `body{border-color:var(--koda-border)!important;}\n` +
+          `input,select,textarea{background-color:var(--koda-surface)!important;color:var(--koda-text)!important;border-color:var(--koda-border)!important;}\n` +
+          `button{border-color:var(--koda-border)!important;}\n` +
+          `a{color:var(--koda-accent)!important;}\n` +
+          `::selection{background:var(--koda-accent)!important;color:#050505!important;}\n` +
+          `button,input,select,textarea{accent-color:var(--koda-accent); }\n` + custom;
+      }
+      async function createAppBlobUrl(file, settings) {
+        const response = await fetch(file.rawUrl);
+        if (!response.ok) throw new Error(`App-Datei konnte nicht geladen werden (${response.status}).`);
+        let html = await response.text();
+        const base = new URL('.', file.rawUrl).href;
+        const baseTag = `<base href="${base.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`;
+        const styleTag = `<style id="koda-app-overrides">${buildAppOverrideCss(settings)}</style>`;
+        if (/<head\b[^>]*>/i.test(html)) {
+          html = html.replace(/<head\b[^>]*>/i, match => `${match}\n${baseTag}`);
+          if (/<\/head>/i.test(html)) html = html.replace(/<\/head>/i, `${styleTag}\n</head>`);
+          else html = html.replace(/<body\b/i, `${styleTag}\n<body`);
+        } else if (/<html\b[^>]*>/i.test(html)) {
+          html = html.replace(/<html\b[^>]*>/i, match => `${match}<head>${baseTag}${styleTag}</head>`);
+        } else {
+          html = `<!doctype html><html lang="de"><head><meta charset="utf-8">${baseTag}${styleTag}</head><body>${html}</body></html>`;
+        }
+        return URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+      }
+      async function launchApp(preview) {
+        if (!activeFile) return;
+        syncAppDraftFromFields();
+        const file = activeFile;
+        const settings = clone(appDraft || getAppSettings(file));
+        const button = preview ? $('previewAppBtn') : $('openAppTabBtn');
+        const previous = button.textContent;
+        button.disabled = true; button.textContent = 'Lädt …';
+        try {
+          const url = await createAppBlobUrl(file, settings);
+          if (preview) {
+            if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = url;
+            $('previewTitle').textContent = settings.name || fileName(file.path);
+            $('appPreviewFrame').src = url;
+            openModal('previewModal');
+          } else {
+            const opened = window.open(url, '_blank');
+            if (!opened) { URL.revokeObjectURL(url); throw new Error('Neuer Tab wurde vom Browser blockiert. Erlaube Pop-ups für diese Seite.'); }
+            opened.opener = null;
+            setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+          }
+        } catch (error) { setStatus(error.message, 'error'); }
+        finally { button.disabled = false; button.textContent = previous; }
+      }
+      $('previewAppBtn').addEventListener('click', () => launchApp(true));
+      $('openAppTabBtn').addEventListener('click', () => launchApp(false));
+      $('downloadAppBtn').addEventListener('click', () => { if (activeFile) downloadOne(activeFile, $('downloadAppBtn')); });
 
       function setStatus(message, type = '') {
         const el = $('status');
@@ -531,7 +1053,10 @@
 
       function renderFiles() {
         const query = $('searchInput').value.trim().toLocaleLowerCase('de');
-        const files = state.files.filter(file => file.path.toLocaleLowerCase('de').includes(query));
+        const files = state.files.filter(file => {
+          const prefs = getAppSettings(file);
+          return prefs.visible !== false && (`${prefs.name || fileName(file.path)} ${file.path} ${prefs.category || ''}`).toLocaleLowerCase('de').includes(query);
+        });
         const list = $('fileList');
         list.replaceChildren();
 
@@ -539,31 +1064,45 @@
           const empty = document.createElement('div');
           empty.className = 'empty';
           const title = document.createElement('strong');
-          title.textContent = state.files.length ? 'Keine Treffer' : 'Keine HTML-Dateien gefunden';
-          empty.append(title, document.createTextNode(state.files.length ? 'Passe deinen Suchbegriff an.' : 'In diesem Repository wurden keine HTML-Dateien gefunden.'));
+          title.textContent = state.files.length ? 'Keine sichtbaren Treffer' : 'Keine HTML-Dateien gefunden';
+          empty.append(title, document.createTextNode(state.files.length ? 'Passe die Suche an oder blende Apps in ihren Einstellungen wieder ein.' : 'In diesem Repository wurden keine HTML-Dateien gefunden.'));
           list.appendChild(empty);
           return;
         }
 
         for (const file of files) {
+          const prefs = getAppSettings(file);
           const row = document.createElement('div');
           row.className = 'file-row';
+          row.tabIndex = 0;
+          row.setAttribute('role', 'button');
+          row.setAttribute('aria-label', `${prefs.name || fileName(file.path)} – App-Einstellungen öffnen`);
+          row.addEventListener('click', event => { if (!event.target.closest('button')) openAppEditor(file); });
+          row.addEventListener('keydown', event => {
+            if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button')) { event.preventDefault(); openAppEditor(file); }
+          });
 
           const info = document.createElement('div');
           info.className = 'file-info';
           const type = document.createElement('div');
           type.className = 'file-type';
-          type.textContent = 'HTML';
+          type.textContent = (prefs.icon || 'HTML').slice(0, 5);
+          if (prefs.colors && prefs.colors.accent) {
+            type.style.color = toRgba(prefs.colors.accent.color, prefs.colors.accent.alpha);
+            type.style.borderColor = toRgba(prefs.colors.accent.color, prefs.colors.accent.alpha);
+            type.style.background = toRgba(prefs.colors.accentBg.color, prefs.colors.accentBg.alpha);
+          }
 
           const text = document.createElement('div');
           text.className = 'file-text';
           const name = document.createElement('div');
           name.className = 'file-name';
-          name.textContent = fileName(file.path);
+          name.textContent = prefs.name || fileName(file.path);
           name.title = file.path;
           const path = document.createElement('div');
           path.className = 'file-path';
-          path.textContent = file.path;
+          const subline = [prefs.description, prefs.category, prefs.version && `v${prefs.version}`].filter(Boolean).join(' · ');
+          path.textContent = subline || file.path;
           path.title = file.path;
           text.append(name, path);
           info.append(type, text);
@@ -573,12 +1112,19 @@
           const size = document.createElement('span');
           size.className = 'file-size';
           size.textContent = formatSize(file.size);
+          const settingsButton = document.createElement('button');
+          settingsButton.className = 'button button-small file-settings-button';
+          settingsButton.type = 'button';
+          settingsButton.textContent = 'Einstellen';
+          settingsButton.addEventListener('click', () => openAppEditor(file));
           const download = document.createElement('button');
           download.className = 'button button-small';
           download.type = 'button';
-          download.textContent = '↓ Download';
+          download.textContent = '↓';
+          download.title = 'Originaldatei herunterladen';
+          download.setAttribute('aria-label', `${fileName(file.path)} herunterladen`);
           download.addEventListener('click', () => downloadOne(file, download));
-          actions.append(size, download);
+          actions.append(size, settingsButton, download);
           row.append(info, actions);
           list.appendChild(row);
         }
@@ -641,6 +1187,11 @@
           button.disabled = false;
         }
       }
+
+      $('previewModal').querySelectorAll('[data-close-modal="previewModal"]').forEach(button => button.addEventListener('click', () => {
+        $('appPreviewFrame').src = 'about:blank';
+        if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
+      }));
 
       $('repoForm').addEventListener('submit', event => {
         event.preventDefault();
